@@ -21,13 +21,102 @@ import java.lang.Throwable;
 
 import java.util.function.Supplier;
 
-import red.enspi.exceptable.Exceptable;
 import red.enspi.exceptable.Exceptable.Signal;
 import red.enspi.exceptable.Exceptable.Signal.Context;
 import red.enspi.exceptable.Exception.E;
 
 /** Utility methods for various error-handling strategies. */
 public class Try {
+
+  /** Invokes a callback, wrapping the return value (or any thrown exception) in a Result object. */
+  public static <V> Result<V> box(Supplier<V> callback) {
+    try {
+      V value = callback.get();
+      return Result.success(value);
+    } catch (Throwable t) {
+      return Result.failure(t);
+    }
+  }
+
+  /**
+   * Invokes a callback, returning its value.
+   *
+   * If the callback throws any of the given Exception types, they are rethrown as the cause of the given Signal.
+   * Throws E.UncaughtException if any other Exception type is thrown.
+   */
+  public static <T, S extends Signal> T collect(
+    Supplier<T> callback,
+    Class<? extends Throwable>[] throwables,
+    S ifCaught
+  ) throws Throwable {
+    try {
+      return callback.get();
+    } catch (Throwable t) {
+      Class<?> tc = t.getClass();
+      for (Class<?> c : throwables) {
+        if (c.equals(tc)) {
+          throw ifCaught.throwable(t);
+        }
+      }
+      throw E.UncaughtException.throwable(t);
+    }
+  }
+
+  public static <T, S extends Signal> T collect(
+    Supplier<T> callback,
+    Signal[] signals,
+    S ifCaught
+  ) throws Throwable {
+    try {
+      return callback.get();
+    } catch (Throwable t) {
+      Throwable tx = E.UncaughtException.throwable(t);
+      if (tx instanceof Exceptable x) {
+        for (Signal s : signals) {
+          if (x.has(s)) {
+            throw ifCaught.throwable(t);
+          }
+        }
+      }
+      throw tx;
+    }
+  }
+
+  /**
+   * Invokes a callback, returning its value.
+   *
+   * If the callback throws any of the given Exception types, they are caught and `null` is returned.
+   * Throws E.UncaughtException if any other Exception type is thrown.
+   */
+  public static <T> T ignore(Supplier<T> callback, Class<? extends Throwable>[] throwables) throws Throwable {
+    try {
+      return callback.get();
+    } catch (Throwable t) {
+      Class<?> tc = t.getClass();
+      for (Class<?> c : throwables) {
+        if (c.equals(tc)) {
+          return null;
+        }
+      }
+      throw E.UncaughtException.throwable(t);
+    }
+  }
+
+  public static <T> T ignore(Supplier<T> callback, Signal[] signals) throws Throwable {
+    try {
+      return callback.get();
+    } catch (Throwable t) {
+      Throwable tx = E.UncaughtException.throwable(t);
+      if (tx instanceof Exceptable x) {
+        for (Signal s : signals) {
+          if (x.has(s)) {
+            return null;
+          }
+        }
+      }
+      throw tx;
+    }
+  }
 
   /**
    * A functional Result object.
@@ -101,101 +190,11 @@ public class Try {
         if (this.cause() instanceof Throwable t) {
           throw (t instanceof Exceptable x && x.is(E.UncaughtException)) ?
             t :
-            E.UncaughtException.from(t);
+            E.UncaughtException.throwable(t);
         }
-        throw this.signal().from();
+        throw this.signal().throwable();
       }
       return this;
-    }
-  }
-
-  /** Invokes a callback, wrapping the return value (or any thrown exception) in a Result object. */
-  public static <V> Result<V> box(Supplier<V> callback) {
-    try {
-      V value = callback.get();
-      return Result.success(value);
-    } catch (Throwable t) {
-      return Result.failure(t);
-    }
-  }
-
-  /**
-   * Invokes a callback, returning its value.
-   *
-   * If the callback throws any of the given Exception types, they are rethrown as the cause of the given Signal.
-   * Throws E.UncaughtException if any other Exception type is thrown.
-   */
-  public static <T, S extends Signal> T collect(
-    Supplier<T> callback,
-    Class<? extends Throwable>[] throwables,
-    S ifCaught
-  ) throws Throwable {
-    try {
-      return callback.get();
-    } catch (Throwable t) {
-      Class<?> tc = t.getClass();
-      for (Class<?> c : throwables) {
-        if (c.equals(tc)) {
-          throw ifCaught.from(t);
-        }
-      }
-      throw E.UncaughtException.from(t);
-    }
-  }
-
-  public static <T, S extends Signal> T collect(
-    Supplier<T> callback,
-    Signal[] signals,
-    S ifCaught
-  ) throws Throwable {
-    try {
-      return callback.get();
-    } catch (Throwable t) {
-      Throwable tx = E.UncaughtException.from(t);
-      if (tx instanceof Exceptable x) {
-        for (Signal s : signals) {
-          if (x.has(s)) {
-            throw ifCaught.from(t);
-          }
-        }
-      }
-      throw tx;
-    }
-  }
-
-  /**
-   * Invokes a callback, returning its value.
-   *
-   * If the callback throws any of the given Exception types, they are caught and `null` is returned.
-   * Throws E.UncaughtException if any other Exception type is thrown.
-   */
-  public static <T> T ignore(Supplier<T> callback, Class<? extends Throwable>[] throwables) throws Throwable {
-    try {
-      return callback.get();
-    } catch (Throwable t) {
-      Class<?> tc = t.getClass();
-      for (Class<?> c : throwables) {
-        if (c.equals(tc)) {
-          return null;
-        }
-      }
-      throw E.UncaughtException.from(t);
-    }
-  }
-
-  public static <T> T ignore(Supplier<T> callback, Signal[] signals) throws Throwable {
-    try {
-      return callback.get();
-    } catch (Throwable t) {
-      Throwable tx = E.UncaughtException.from(t);
-      if (tx instanceof Exceptable x) {
-        for (Signal s : signals) {
-          if (x.has(s)) {
-            return null;
-          }
-        }
-      }
-      throw tx;
     }
   }
 }

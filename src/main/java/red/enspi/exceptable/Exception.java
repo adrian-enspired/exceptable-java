@@ -16,8 +16,6 @@
  */
 package red.enspi.exceptable;
 
-import java.lang.Throwable;
-
 /** Base Exceptable for checked exceptions. */
 public class Exception extends java.lang.Exception implements Exceptable {
 
@@ -38,9 +36,15 @@ public class Exception extends java.lang.Exception implements Exceptable {
   private final Signal signal;
   private final Signal.Context context;
 
+  public Exception() {
+    this.Exception(E.UnknownError, null, null);
+  }
+
   public Exception(Signal signal, Signal.Context context, Throwable cause) {
-    super(signal.message(context), cause, true, true);
-    this.signal = (signal == null) ? E.UnknownError : signal;
+    super(
+      (signal != null) ? signal.message(context) : E.UnknownError.message(context),
+      cause);
+    this.signal = (signal != null) ? signal : E.UnknownError;
     this.context = context;
   }
 

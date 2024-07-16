@@ -28,12 +28,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import red.enspi.exceptable.Exceptable.Signal;
 import red.enspi.exceptable.Exceptable.Signal.Context;
+import red.enspi.exceptable.IllegalArgument.E;
 
-public class ExceptionTest implements ExceptableTest {
+public class IllegalArgumentTest implements ExceptableTest {
 
   @Override
   public Class<? extends Exceptable> exceptable() {
-    return Exception.class;
+    return IllegalArgument.class;
   }
 
   @Override
@@ -53,13 +54,12 @@ public class ExceptionTest implements ExceptableTest {
 
   public static Stream<Arguments> construct_source() {
     var cause = new java.lang.Exception("This is a test.");
-    var context = new Exception.E.Context(cause, null);
+    var context = new E.Context<Integer>("foo", 41, "the product of 6 and 7");
     return Stream.of(
-      Arguments.of(Exception.E.UnknownError, null, null),
-      Arguments.of(Exception.E.UncaughtException, null, null),
-      Arguments.of(Exception.E.UncaughtException, context, null),
-      Arguments.of(Exception.E.UncaughtException, null, cause),
-      Arguments.of(Exception.E.UncaughtException, context, cause));
+      Arguments.of(E.IllegalArgument, null, null),
+      Arguments.of(E.IllegalArgument, context, null),
+      Arguments.of(E.IllegalArgument, null, cause),
+      Arguments.of(E.IllegalArgument, context, cause));
   }
 
   @Override
@@ -75,8 +75,7 @@ public class ExceptionTest implements ExceptableTest {
 
   public static Stream<Arguments> SignalCode_source() {
     return Stream.of(
-      Arguments.of(Exception.E.UnknownError, "red.enspi.exceptable.Exception.UnknownError"),
-      Arguments.of(Exception.E.UncaughtException, "red.enspi.exceptable.Exception.UncaughtException"));
+      Arguments.of(E.IllegalArgument, "red.enspi.exceptable.IllegalArgument.IllegalArgument"));
   }
 
   @Override
@@ -94,15 +93,12 @@ public class ExceptionTest implements ExceptableTest {
 
   public static Stream<Arguments> SignalMessage_source() {
     return Stream.of(
-      Arguments.of(Exception.E.UnknownError, null, "red.enspi.exceptable.Exception.UnknownError: Unknown error."),
+      Arguments.of(E.IllegalArgument, null, "red.enspi.exceptable.IllegalArgument.IllegalArgument"),
       Arguments.of(
-        Exception.E.UncaughtException,
-        null,
-        "red.enspi.exceptable.Exception.UncaughtException"),
-      Arguments.of(
-        Exception.E.UncaughtException,
-        new Exception.E.Context(new java.lang.Exception("This is a test."), null),
-        "red.enspi.exceptable.Exception.UncaughtException: Uncaught exception: java.lang.Exception: This is a test."));
+        E.IllegalArgument,
+        new E.Context<Integer>("foo", 41, "the product of 6 and 7"),
+        "red.enspi.exceptable.IllegalArgument.IllegalArgument:"
+        + " 'foo' must be the product of 6 and 7; '41' provided."));
   }
 
   @Override

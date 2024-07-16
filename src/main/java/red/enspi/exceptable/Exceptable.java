@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  * - MUST be records
  * - SHOULD have components that provide information relevant to error messages
  *
- * The easiest (and recommend) way to meet these requirements is to extend from one of the provided base Exceptables:
+ * The easiest (recommend) way to meet these requirements is to extend from one of the provided base Exceptables:
  * - `Exception`
  * - `RuntimeException`
  * - `IllegalArgumentException`
@@ -52,57 +52,54 @@ import java.util.stream.Collectors;
  */
 public interface Exceptable {
 
-  /** These represent the specific error scenarios for this Exceptable. */
-  interface Signal {
+  /** The previous Exception (if any) in the chain. */
+  default Throwable cause() {
+    return this.getCause();
+  }
 
-    /** Contextual information specific to one or more of this Signal's cases. */
-    interface Context {
+  /** Contextual information for this Exceptable. */
+  Signal.Context context();
 
-      /**
-       * Formats the given template based on contextual information.
-       *
-       * Supports string replacement of the follow context types:
-       * - primitives, via String.valueOf()
-       * - objects, via .toString()
-       * - arrays of primitives or objects, via above strategies, wrapped in brackets and joined by commas.
-       *
-       * It is the implementation's responsibility to ensure that any context referenced in a message template
-       *  has a meaningful string representation.
-       */
-      default String message(String template) {
-        // non ops
-        if (template == null) {
-          return "";
+  /** The Signal that describes the error case this Exceptable was thrown for. */
+  Signal signal();
+
+  /** Does this Exceptable contain the given Signal, anywhere in its chain? */
+  default boolean has(Signal signal) {
+    if (this instanceof Throwable t) {
+      while (t instanceof Throwable) {
+        if (t instanceof Exceptable x && x.signal() == signal) {
+          return true;
         }
-        if (! template.contains("{")) {
-          return template;
-        }
-        // iterate and stringify record components
-        for (RecordComponent rc : this.getClass().getRecordComponents()) {
-          try {
-            Class<?> type = rc.getType();
-            String value;
-            if (type.isArray()) {
-              Class<?> arrayType = type.getComponentType();
-              value = "[" +
-                Arrays.stream((Object[]) rc.getAccessor().invoke(this))
-                  .map(arrayType.isPrimitive() ? v -> String.valueOf(v) : v -> v.toString())
-                  .collect(Collectors.joining(", ")) +
-                "]";
-            } else {
-              value = type.isPrimitive() ?
-                String.valueOf(rc.getAccessor().invoke(this)) :
-                "bzzzzzz";//rc.getAccessor().invoke(this).toString();
-            }
-            // do replacement
-            template = template.replace("{" + rc.getName() + "}", value);
-          } catch (IllegalAccessException | InvocationTargetException e) {
-            // ignore; move on to next
-          }
-        }
-        return template;
+        t = t.getCause();
       }
     }
+    return false;
+  }
+
+  /** Was this Exceptable directly caused by the given Signal? */
+  default boolean is(Signal signal) {
+    return this.signal() == signal;
+  }
+
+  /** The human-readable error message. */
+  default String message() {
+    return this.getMessage();
+  }
+
+  /** Finds the previous-most Throwable in the Exceptable's chain (which may be this Exceptable). */
+  default Throwable rootCause() {
+    Throwable prev;
+    if (this instanceof Throwable root) {
+      while ((prev = root.getCause()) != null) {
+        root = prev;
+      }
+      return root;
+    }
+    return null;
+  }
+
+  /** Specific error scenarios for this Exceptable. */
+  interface Signal {
 
     /** Factory: builds an Exceptable from this case. */
     default Throwable throwable(Context context, Throwable cause) {
@@ -123,21 +120,21 @@ public interface Exceptable {
       return new Exception(this, context, cause);
     }
 
-    default Throwable from(Context context) {
+    default Throwable throwable(Context context) {
       return this.throwable(context, null);
     }
 
-    default Throwable from(Throwable cause) {
+    default Throwable throwable(Throwable cause) {
       return this.throwable(null, cause);
     }
 
-    default Throwable from() {
+    default Throwable throwable() {
       return this.throwable(null, null);
     }
 
     /** A unique and identifiable error code for this case. */
     default String code() {
-      return String.format("%s.%s", this.getClass().getName(), this.toString());
+      return String.format("%s.%s", this.getClass().getEnclosingClass().getName(), this.toString());
     }
 
     /** An error message for this case, including specific context where available. */
@@ -171,52 +168,52 @@ public interface Exceptable {
     default String template() {
       return "An error occured.";
     }
-  }
 
-  /** Proxies `.getCause()`. */
-  default Throwable cause() {
-    return this.getCause();
-  }
+    /** Contextual information specific to one or more of this Signal's cases. */
+    interface Context {
 
-  /** Contextual information for this Exceptable. */
-  Signal.Context context();
-
-  /** The Signal that describes the cause of this Exceptable. */
-  Signal signal();
-
-  /** Does this Exceptable contain the given Signal, anywhere in its chain? */
-  default boolean has(Signal signal) {
-    if (this instanceof Throwable t) {
-      while (t instanceof Throwable) {
-        if (t instanceof Exceptable x && x.signal() == signal) {
-          return true;
+      /**
+       * Formats the given template based on contextual information.
+       *
+       * Supports string replacement of the follow context types:
+       * - primitives, via String.valueOf()
+       * - objects, via .toString()
+       * - arrays of primitives or objects, via above strategies, wrapped in brackets and joined by commas.
+       *
+       * It is the implementation's responsibility to ensure that any context referenced in a message template
+       *  has a meaningful string representation.
+       */
+      default String message(String template) {
+        // non ops
+        if (template == null) {
+          return "";
         }
-        t = t.getCause();
+        if (! template.contains("{")) {
+          return template;
+        }
+        // iterate and stringify record components
+        for (RecordComponent rc : this.getClass().getRecordComponents()) {
+          try {
+            Class<?> type = rc.getType();
+            String value;
+            if (type.isArray()) {
+              value = "[" +
+                Arrays.stream((Object[]) rc.getAccessor().invoke(this))
+                  .map(String::valueOf)
+                  .collect(Collectors.joining(", ")) +
+                "]";
+            } else {
+              value = String.valueOf(rc.getAccessor().invoke(this));
+            }
+            // do replacement
+            template = template.replace("{" + rc.getName() + "}", value);
+          } catch (IllegalAccessException | InvocationTargetException e) {
+            // ignore; move on to next
+          }
+        }
+        return template;
       }
     }
-    return false;
-  }
-
-  /** Was this Exceptable directly caused by the given Signal? */
-  default boolean is(Signal signal) {
-    return this.signal() == signal;
-  }
-
-  /** Proxies `.getMessage()`. */
-  default String message() {
-    return this.getMessage();
-  }
-
-  /** Finds the previous-most Throwable in the Exceptable's chain (which may be this Exceptable). */
-  default Throwable rootCause() {
-    Throwable prev;
-    if (this instanceof Throwable root) {
-      while ((prev = root.getCause()) != null) {
-        root = prev;
-      }
-      return root;
-    }
-    return null;
   }
 
   // Throwable methods

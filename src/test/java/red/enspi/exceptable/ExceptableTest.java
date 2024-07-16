@@ -56,6 +56,54 @@ import red.enspi.exceptable.Exceptable.Signal.Context;
  */
 public interface ExceptableTest {
 
+  /** Provides the Exceptable Class under test. */
+  Class<? extends Exceptable> exceptable();
+
+  /**
+   * Constructor tests.
+   *
+   * This is a `@ParameterizedTest` and requires a source that provides:
+   * - `Signal`: the case from a Signal enum to be tested.
+   * - `Context`: a Context record appropriate for the Signal being tested.
+   * - `Throwable`: an Exception to use as the cause of the Signal being tested.
+   *
+   * For each Signal tested, you should have (at a minimum) four test cases:
+   * - with a context object and cause.
+   * - with context only.
+   * - with cause only.
+   * - with neither.
+   *
+   * Note this test is for successful test scenarios (i.e., correct usage).
+   * However, it should also be able verify that a Signal with mismatched context is handled gracefully.
+   */
+  void construct(Signal signal, Context context, Throwable cause);
+
+  /**
+   * Tests that an Exceptable Signal provides the expected error code.
+   *
+   * This is a `@ParameterizedTest` and requires a source that provides:
+   * - `Signal`: the case from a Signal enum to be tested.
+   * - `String`: the expected error code.
+   */
+  void SignalCode(Signal signal, String expected);
+
+  /**
+   * Tests that an Exceptable.Signal case can build an error message using a given Context object.
+   *
+   * This is a `@ParameterizedTest` and requires a source that provides:
+   * - `Signal`: the case from a Signal enum to be tested.
+   * - `Context`: a Context record appropriate for the Signal being tested.
+   * - `String`: the expected error message.
+   *
+   * For each Signal tested, you should have (at a minimum) two test cases:
+   * - with a context object.
+   * - without.
+   *
+   * Note this test is for successful test scenarios (i.e., correct usage).
+   * However, it should also be able verify that a Signal with mismatched context is handled gracefully.
+   */
+  void SignalMessage(Signal signal, Context context, String expected);
+
   /**
    * Tests that an Exceptable.Signal case can properly build an Exceptable instance.
    *
@@ -64,14 +112,8 @@ public interface ExceptableTest {
    * - `Context`: a Context record appropriate for the Signal being tested.
    * - `Throwable`: an Exception to use as the cause of the Signal being tested.
    *
-   * For each Signal tested, you should have (at a minimum) four test cases:
-   * - with a context object, and cause.
-   * - with context only.
-   * - with cause only.
-   * - with neither.
-   *
-   * Note this test is for successful test scenarios (i.e., correct usage).
-   * However, it should also be able verify that a Signal with mismatched context is handled gracefully.
+   * This test takes the same arguments as construct() and implementations can likely use the same source;
+   *  see .construct() for details.
    */
   void SignalThrowable(Signal signal, Context context, Throwable cause);
 
@@ -94,15 +136,21 @@ public interface ExceptableTest {
       String.format("Expected actual.rootCause() to be '%s', but saw '%s'.", expectedRoot, actualRoot));
   }
 
-  default void message_assertions(String expected, Exceptable actual) {
-    String actualMessage = actual.message();
-    assertTrue(
-      actualMessage.startsWith(actual.signal().code()),
-      String.format("Expected actual.message() to be prefixed with Signal code, but saw '%s'.", actualMessage));
+  default void context_assertions(Context expected, Context actual) {
     assertEquals(
       expected,
-      actualMessage,
-      String.format("Expected actual.message() to be '%s', but saw '%s'.", expected, actualMessage));
+      actual,
+      "Expected actual.context() to return the same Context instance as constructed.");
+  }
+
+  default void message_assertions(String expected, String actual, Signal signal) {
+    assertTrue(
+      actual.startsWith(signal.code()),
+      String.format("Expected actual.message() to be prefixed with Signal code, but saw '%s'.", actual));
+    assertEquals(
+      expected,
+      actual,
+      String.format("Expected actual.message() to be '%s', but saw '%s'.", expected, actual));
   }
 
   default void signal_assertions(Signal expected, Exceptable actual) {

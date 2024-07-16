@@ -16,17 +16,15 @@
  */
 package red.enspi.exceptable;
 
-import java.lang.Throwable;
-
 /** Base Exceptable for illegal arguments. */
-public class IllegalArgumentException extends java.lang.IllegalArgumentException implements Exceptable {
+public class IllegalArgument extends IllegalArgumentException implements Exceptable {
 
   public enum E implements Signal {
     IllegalArgument;
 
     public String template() {
       return switch (this) {
-        case IllegalArgument -> "Illegal argument '{name}' ({value}); must be {requirement}.";
+        case IllegalArgument -> "'{name}' must be {requirement}; '{value}' provided.";
       };
     }
 
@@ -36,9 +34,15 @@ public class IllegalArgumentException extends java.lang.IllegalArgumentException
   private final Signal signal;
   private final Signal.Context context;
 
-  public IllegalArgumentException(Signal signal, Signal.Context context, Throwable cause) {
-    super(signal.message(context), cause);
-    this.signal = (signal == null) ? E.IllegalArgument : signal;
+  public IllegalArgument() {
+    this.IllegalArgument(E.IllegalArgument, null, null);
+  }
+
+  public IllegalArgument(Signal signal, Signal.Context context, Throwable cause) {
+    super(
+      (signal != null) ? signal.message(context) : E.IllegalArgument.message(context),
+      cause);
+    this.signal = (signal != null) ? signal : E.IllegalArgument;
     this.context = context;
   }
 
