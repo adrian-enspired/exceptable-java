@@ -104,20 +104,14 @@ public interface Exceptable {
     /** Factory: builds an Exceptable from this case. */
     default Throwable throwable(Context context, Throwable cause) {
       try {
-        Object o = this.getClass()
-          .getEnclosingClass()
-          .getDeclaredConstructor(Signal.class, Context.class, Throwable.class)
-          .newInstance(this, context, cause);
-        if (o instanceof Exceptable x && x instanceof Throwable tx) {
-          // we should always get here.
-          return tx;
-        }
-        // falls through.
+        return Throwable.class.cast(
+          this.throwableType()
+            .getDeclaredConstructor(Signal.class, Context.class, Throwable.class)
+            .newInstance(this, context, cause));
       } catch (Throwable t) {
-        // do something? falls through.
+        // problem building the intended Exceptable. fall back on using a basic Exceptable.
+        return new Exception(this, context, cause);
       }
-      // problem building the intended Exceptable. fall back on using a basic Exceptable.
-      return new Exception(this, context, cause);
     }
 
     default Throwable throwable(Context context) {
@@ -167,6 +161,22 @@ public interface Exceptable {
      */
     default String template() {
       return "An error occured.";
+    }
+
+    /**
+     * The Throwable+Exceptable class this Signal must use.
+     *
+     * Override this method IF your Signal class is not enclosed by your desired Exceptable class -
+     *  otherwise, just let it be.
+     * You should keep the same checks in place
+     *  (ensuring the Class both extends Throwable, and implements Exceptable)
+     *  as there's no way to enforce a type like <X extends Throwable & Exceptable>.
+     */
+    default Class<?> throwableType() {
+      Class<?> c = this.getClass().getEnclosingClass();
+      return (Exceptable.class.isAssignableFrom(c) && Throwable.class.isAssignableFrom(c)) ?
+        c :
+        Exception.class;
     }
 
     /** Contextual information specific to one or more of this Signal's cases. */

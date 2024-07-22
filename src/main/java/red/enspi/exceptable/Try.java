@@ -28,16 +28,6 @@ import red.enspi.exceptable.Exception.E;
 /** Utility methods for various error-handling strategies. */
 public class Try {
 
-  /** Invokes a callback, wrapping the return value (or any thrown exception) in a Result object. */
-  public static <V> Result<V> box(Supplier<V> callback) {
-    try {
-      V value = callback.get();
-      return Result.success(value);
-    } catch (Throwable t) {
-      return Result.failure(t);
-    }
-  }
-
   /**
    * Invokes a callback, returning its value.
    *
@@ -115,6 +105,16 @@ public class Try {
         }
       }
       throw tx;
+    }
+  }
+
+  /** Invokes a callback, wrapping the return value (or any thrown exception) in a Result object. */
+  public static <V> Result<V> result(Supplier<V> callback) {
+    try {
+      V value = callback.get();
+      return Result.success(value);
+    } catch (Throwable t) {
+      return Result.failure(t);
     }
   }
 

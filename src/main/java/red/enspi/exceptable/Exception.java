@@ -37,7 +37,7 @@ public class Exception extends java.lang.Exception implements Exceptable {
   private final Signal.Context context;
 
   public Exception() {
-    this.Exception(E.UnknownError, null, null);
+    this(E.UnknownError, null, null);
   }
 
   public Exception(Signal signal, Signal.Context context, Throwable cause) {

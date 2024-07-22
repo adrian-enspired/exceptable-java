@@ -23,9 +23,10 @@
       <artifactId>junit-jupiter-params</artifactId>
       <version>5.10.3</version>
       <scope>test</scope>
-  </dependency>
+    </dependency>
   </dependencies>
   <build>
+    <sourceDirectory>src/main/java</sourceDirectory>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -34,7 +35,38 @@
         <configuration>
           <source>21</source>
           <target>21</target>
+          <encoding>UTF-8</encoding>
+          <annotationProcessors>
+            <annotationProcessor>
+              red.enspi.exceptable.annotation.TestSourceProcessor
+            </annotationProcessor>
+          </annotationProcessors>
         </configuration>
+        <executions>
+          <execution>
+            <id>compile-main</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>compile-annotations</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <sourceDirectory>src/main/red/enspi/exceptable/annotation</sourceDirectory>
+              <includes>
+                <include>**/*.java</include>
+              </includes>
+              <compilerArgs>
+                <arg>-proc:none</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

@@ -35,7 +35,7 @@ public class IllegalArgument extends IllegalArgumentException implements Excepta
   private final Signal.Context context;
 
   public IllegalArgument() {
-    this.IllegalArgument(E.IllegalArgument, null, null);
+    this(E.IllegalArgument, null, null);
   }
 
   public IllegalArgument(Signal signal, Signal.Context context, Throwable cause) {
