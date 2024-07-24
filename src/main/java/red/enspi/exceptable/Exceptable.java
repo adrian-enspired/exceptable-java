@@ -128,7 +128,7 @@ public interface Exceptable {
 
     /** A unique and identifiable error code for this case. */
     default String code() {
-      return String.format("%s.%s", this.getClass().getEnclosingClass().getName(), this.toString());
+      return String.format("%s.%s", this.getClass().getName().toString(), this.toString());
     }
 
     /** An error message for this case, including specific context where available. */
@@ -174,7 +174,7 @@ public interface Exceptable {
      */
     default Class<?> throwableType() {
       Class<?> c = this.getClass().getEnclosingClass();
-      return (Exceptable.class.isAssignableFrom(c) && Throwable.class.isAssignableFrom(c)) ?
+      return (c != null && Exceptable.class.isAssignableFrom(c) && Throwable.class.isAssignableFrom(c)) ?
         c :
         Exception.class;
     }

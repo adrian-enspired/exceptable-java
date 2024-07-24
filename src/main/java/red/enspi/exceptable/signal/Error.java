@@ -1,4 +1,4 @@
-/*
+ /*
  * author     Adrian <adrian@enspi.red>
  * copyright  2024
  * license    GPL-3.0 (only)
@@ -14,16 +14,21 @@
  *  You should have received a copy of the GNU General Public License along with this program.
  *  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
  */
-package red.enspi.exceptable.annotation;
+package red.enspi.exceptable.signal;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.Throwable;
+import red.enspi.exceptable.Exception;
+import red.enspi.exceptable.Exceptable.Signal;
 
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
-public @interface ExceptableSignals {
+public enum Error implements Signal {
+  UncaughtException("Uncaught exception: {cause}"),
+  UnknownError("Unknown error.");
 
-  String exceptableClass();
+  private String template;
+  private Error(String template) { this.template = template; }
+  public String template() { return this.template; }
+  @Override
+  public Class<?> throwableType() { return Exception.class; }
+
+  public record Context(Throwable cause, Signal.Context more) implements Signal.Context {}
 }

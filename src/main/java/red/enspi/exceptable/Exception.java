@@ -16,45 +16,29 @@
  */
 package red.enspi.exceptable;
 
+import red.enspi.exceptable.signal.Error;
+
 /** Base Exceptable for checked exceptions. */
 public class Exception extends java.lang.Exception implements Exceptable {
-
-  public enum E implements Signal {
-    UncaughtException,
-    UnknownError;
-
-    public String template() {
-      return switch (this) {
-        case E.UncaughtException -> "Uncaught exception: {cause}";
-        case E.UnknownError -> "Unknown error.";
-      };
-    }
-
-    public record Context(Throwable cause, Signal.Context more) implements Signal.Context {}
-  }
 
   private final Signal signal;
   private final Signal.Context context;
 
   public Exception() {
-    this(E.UnknownError, null, null);
+    this(Error.UnknownError, null, null);
   }
 
   public Exception(Signal signal, Signal.Context context, Throwable cause) {
     super(
-      (signal != null) ? signal.message(context) : E.UnknownError.message(context),
+      (signal != null) ? signal.message(context) : Error.UnknownError.message(context),
       cause);
-    this.signal = (signal != null) ? signal : E.UnknownError;
+    this.signal = (signal != null) ? signal : Error.UnknownError;
     this.context = context;
   }
 
   @Override
-  public Signal.Context context() {
-    return this.context;
-  }
+  public Signal.Context context() { return this.context; }
 
   @Override
-  public Signal signal() {
-    return this.signal;
-  }
+  public Signal signal() { return this.signal; }
 }

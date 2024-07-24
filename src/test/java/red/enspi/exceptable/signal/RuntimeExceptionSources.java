@@ -14,40 +14,44 @@
  *  You should have received a copy of the GNU General Public License along with this program.
  *  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
  */
-package red.enspi.exceptable;
+package red.enspi.exceptable.signal;
 
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.provider.Arguments;
 
 import red.enspi.exceptable.annotation.TestSource;
-import red.enspi.exceptable.IllegalArgument.E;
 
-@TestSource(exceptableClass = "IllegalArgument")
-public class IllegalArgumentSources {
+@TestSource(exceptableClass = "RuntimeException")
+public class RuntimeExceptionSources {
 
   public static Stream<Arguments> construct_source() {
     var cause = new java.lang.Exception("This is a test.");
-    var context = new E.Context<Integer>("foo", 41, "the product of 6 and 7");
+    var context = new Runtime.Context(cause, null);
     return Stream.of(
-      Arguments.of(E.IllegalArgument, null, null),
-      Arguments.of(E.IllegalArgument, context, null),
-      Arguments.of(E.IllegalArgument, null, cause),
-      Arguments.of(E.IllegalArgument, context, cause));
+      Arguments.of(Runtime.UnknownError, null, null),
+      Arguments.of(Runtime.UncaughtException, null, null),
+      Arguments.of(Runtime.UncaughtException, context, null),
+      Arguments.of(Runtime.UncaughtException, null, cause),
+      Arguments.of(Runtime.UncaughtException, context, cause));
   }
 
   public static Stream<Arguments> SignalCode_source() {
     return Stream.of(
-      Arguments.of(E.IllegalArgument, "red.enspi.exceptable.IllegalArgument.IllegalArgument"));
+      Arguments.of(Runtime.UnknownError, "red.enspi.exceptable.signal.Runtime.UnknownError"),
+      Arguments.of(Runtime.UncaughtException, "red.enspi.exceptable.signal.Runtime.UncaughtException"));
   }
 
   public static Stream<Arguments> SignalMessage_source() {
     return Stream.of(
-      Arguments.of(E.IllegalArgument, null, "red.enspi.exceptable.IllegalArgument.IllegalArgument"),
       Arguments.of(
-        E.IllegalArgument,
-        new E.Context<Integer>("foo", 41, "the product of 6 and 7"),
-        "red.enspi.exceptable.IllegalArgument.IllegalArgument:"
-        + " 'foo' must be the product of 6 and 7; '41' provided."));
+        Runtime.UnknownError,
+        null,
+        "red.enspi.exceptable.signal.Runtime.UnknownError: Unknown runtime error."),
+      Arguments.of(
+        Runtime.UncaughtException,
+        new Runtime.Context(new java.lang.Exception("This is a test."), null),
+        "red.enspi.exceptable.signal.Runtime.UncaughtException: Uncaught runtime exception:"
+          + " java.lang.Exception: This is a test."));
   }
 }

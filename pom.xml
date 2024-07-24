@@ -37,9 +37,8 @@
           <target>21</target>
           <encoding>UTF-8</encoding>
           <annotationProcessors>
-            <annotationProcessor>
-              red.enspi.exceptable.annotation.TestSourceProcessor
-            </annotationProcessor>
+            <annotationProcessor>red.enspi.exceptable.annotation.ExceptableSignalProcessor</annotationProcessor>
+            <annotationProcessor>red.enspi.exceptable.annotation.TestSourceProcessor</annotationProcessor>
           </annotationProcessors>
         </configuration>
         <executions>

@@ -21,37 +21,38 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.provider.Arguments;
 
 import red.enspi.exceptable.annotation.TestSource;
+import red.enspi.exceptable.signal.Error;
 
 @TestSource(exceptableClass = "Exception")
 public class ExceptionSources {
 
   public static Stream<Arguments> construct_source() {
     var cause = new java.lang.Exception("This is a test.");
-    var context = new Exception.E.Context(cause, null);
+    var context = new Error.Context(cause, null);
     return Stream.of(
-      Arguments.of(Exception.E.UnknownError, null, null),
-      Arguments.of(Exception.E.UncaughtException, null, null),
-      Arguments.of(Exception.E.UncaughtException, context, null),
-      Arguments.of(Exception.E.UncaughtException, null, cause),
-      Arguments.of(Exception.E.UncaughtException, context, cause));
+      Arguments.of(Error.UnknownError, null, null),
+      Arguments.of(Error.UncaughtException, null, null),
+      Arguments.of(Error.UncaughtException, context, null),
+      Arguments.of(Error.UncaughtException, null, cause),
+      Arguments.of(Error.UncaughtException, context, cause));
   }
 
   public static Stream<Arguments> SignalCode_source() {
     return Stream.of(
-      Arguments.of(Exception.E.UnknownError, "red.enspi.exceptable.Exception.UnknownError"),
-      Arguments.of(Exception.E.UncaughtException, "red.enspi.exceptable.Exception.UncaughtException"));
+      Arguments.of(Error.UnknownError, "red.enspi.exceptable.signal.Error.UnknownError"),
+      Arguments.of(Error.UncaughtException, "red.enspi.exceptable.signal.Error.UncaughtException"));
   }
 
   public static Stream<Arguments> SignalMessage_source() {
     return Stream.of(
-      Arguments.of(Exception.E.UnknownError, null, "red.enspi.exceptable.Exception.UnknownError: Unknown error."),
+      Arguments.of(Error.UnknownError, null, "red.enspi.exceptable.signal.Error.UnknownError: Unknown error."),
       Arguments.of(
-        Exception.E.UncaughtException,
+        Error.UncaughtException,
         null,
-        "red.enspi.exceptable.Exception.UncaughtException"),
+        "red.enspi.exceptable.signal.Error.UncaughtException"),
       Arguments.of(
-        Exception.E.UncaughtException,
-        new Exception.E.Context(new java.lang.Exception("This is a test."), null),
-        "red.enspi.exceptable.Exception.UncaughtException: Uncaught exception: java.lang.Exception: This is a test."));
+        Error.UncaughtException,
+        new Error.Context(new java.lang.Exception("This is a test."), null),
+        "red.enspi.exceptable.signal.Error.UncaughtException: Uncaught exception: java.lang.Exception: This is a test."));
   }
 }
