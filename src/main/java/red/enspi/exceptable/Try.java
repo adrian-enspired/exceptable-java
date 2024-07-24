@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 import red.enspi.exceptable.Exceptable.Signal;
 import red.enspi.exceptable.Exceptable.Signal.Context;
-import red.enspi.exceptable.Exception.E;
+import red.enspi.exceptable.signal.Error;
 
 /** Utility methods for various error-handling strategies. */
 public class Try {
@@ -32,7 +32,7 @@ public class Try {
    * Invokes a callback, returning its value.
    *
    * If the callback throws any of the given Exception types, they are rethrown as the cause of the given Signal.
-   * Throws E.UncaughtException if any other Exception type is thrown.
+   * Throws Error.UncaughtException if any other Exception type is thrown.
    */
   public static <T, S extends Signal> T collect(
     Supplier<T> callback,
@@ -48,7 +48,7 @@ public class Try {
           throw ifCaught.throwable(t);
         }
       }
-      throw E.UncaughtException.throwable(t);
+      throw Error.UncaughtException.throwable(t);
     }
   }
 
@@ -60,7 +60,7 @@ public class Try {
     try {
       return callback.get();
     } catch (Throwable t) {
-      Throwable tx = E.UncaughtException.throwable(t);
+      Throwable tx = Error.UncaughtException.throwable(t);
       if (tx instanceof Exceptable x) {
         for (Signal s : signals) {
           if (x.has(s)) {
@@ -76,7 +76,7 @@ public class Try {
    * Invokes a callback, returning its value.
    *
    * If the callback throws any of the given Exception types, they are caught and `null` is returned.
-   * Throws E.UncaughtException if any other Exception type is thrown.
+   * Throws Error.UncaughtException if any other Exception type is thrown.
    */
   public static <T> T ignore(Supplier<T> callback, Class<? extends Throwable>[] throwables) throws Throwable {
     try {
@@ -88,7 +88,7 @@ public class Try {
           return null;
         }
       }
-      throw E.UncaughtException.throwable(t);
+      throw Error.UncaughtException.throwable(t);
     }
   }
 
@@ -96,7 +96,7 @@ public class Try {
     try {
       return callback.get();
     } catch (Throwable t) {
-      Throwable tx = E.UncaughtException.throwable(t);
+      Throwable tx = Error.UncaughtException.throwable(t);
       if (tx instanceof Exceptable x) {
         for (Signal s : signals) {
           if (x.has(s)) {
@@ -158,7 +158,7 @@ public class Try {
     public Result {
       // fill an empty error from a given exception
       if (signal == null && cause != null) {
-        signal = (cause instanceof Exceptable x) ? x.signal() : E.UncaughtException;
+        signal = (cause instanceof Exceptable x) ? x.signal() : Error.UncaughtException;
       }
       // enforce sanity (we cannot succeed _and_ fail). should this throw?
       if (signal == null) {
@@ -188,9 +188,9 @@ public class Try {
     public Result<V> throwOnFailure() throws Throwable {
       if (this.isFailure()) {
         if (this.cause() instanceof Throwable t) {
-          throw (t instanceof Exceptable x && x.is(E.UncaughtException)) ?
+          throw (t instanceof Exceptable x && x.is(Error.UncaughtException)) ?
             t :
-            E.UncaughtException.throwable(t);
+            Error.UncaughtException.throwable(t);
         }
         throw this.signal().throwable();
       }

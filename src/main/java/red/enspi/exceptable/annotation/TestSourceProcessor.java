@@ -56,7 +56,7 @@ public class TestSourceProcessor extends AbstractProcessor {
     import {package}.{exceptableTestSource};
 
     /** Test suite for {exceptableClassname}. */
-    class {exceptableClassname}Test extends {exceptableTestSource} implements ExceptableTest {
+    public class {exceptableClassname}Test extends {exceptableTestSource} implements ExceptableTest {
 
       @Override
       public Class<? extends Exceptable> exceptable() {
