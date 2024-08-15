@@ -27,27 +27,34 @@ import java.util.stream.Collectors;
 /**
  * Making exceptions exceptional!
  *
- * Unfortunately, since java has no interface for throwables, and does not allow for default constructors,
- *  we have to make some implementation rules and assumptions:
- *
+ * <p> Unfortunately, since java has no interface for throwables, and does not allow for default constructors,
+ *  we have to make some implementation rules and assumptions.
  * Classes that implement `Exceptable`:
- * - MUST extend from `Throwable`
- * - MUST declare a constructor like `(Signal error, Context context, Throwable cause)`
+ * <ul>
+ * <li> MUST extend from `Throwable`
+ * <li> MUST declare a constructor like `(Signal error, Context context, Throwable cause)`
+ * </ul>
  *
  * Classes that implement `Exceptable.Signal`:
- * - MUST be enums
+ * <ul>
+ * <li> MUST be enums
+ * </ul>
  *
  * Classes that implement `Exceptable.Signal.Context`:
- * - MUST be records
- * - SHOULD have components that provide information relevant to error messages
+ * <ul>
+ * <li> MUST be records
+ * <li> SHOULD have components that provide information relevant to error messages
+ * </ul>
  *
  * The easiest (recommend) way to meet these requirements is to extend from one of the provided base Exceptables:
- * - `Exception`
- * - `RuntimeException`
- * - `IllegalArgumentException`
+ * <ul>
+ * <li> `Exception`
+ * <li> `RuntimeException`
+ * <li> `IllegalArgumentException`
+ * </ul>
+ *
  * These classes also extend from the built-in exception classes of the same names,
  *  so can be handled transparently by code that expects those exception types.
- *
  * Abstract Tests are provided to verify correct implementation of your custom Exceptables.
  */
 public interface Exceptable {
@@ -131,46 +138,40 @@ public interface Exceptable {
       return String.format("%s.%s", this.getClass().getName().toString(), this.toString());
     }
 
-    /** An error message for this case, including specific context where available. */
-    default String message(Context context) {
-      String template = this.template();
-      if (! template.contains("{")) {
-        // no formatting; return plain template
-        return String.format("%s: %s", this.code(), template);
-      }
-      if (context != null) {
-        // custom message
-        String message = context.message(template);
-        if (! message.contains("{")) {
-          // successful format
-          return String.format("%s: %s", this.code(), message);
-        }
-      }
-      // unsuccessful format; omit custom message
-      return this.code();
+    /**
+     * A human-readable description of this signal.
+     *
+     * <p> Override this method to provide a description for your Signal(s).
+     * This will be used to construct the Signal's message if no Context object is provided,
+     * or if the Context object does not provide a contextualized message.
+     */
+    default String description() {
+      return null;
     }
 
-    /**
-     * A template for the error message for this case, possibly with {token}s for context.
-     *
-     * Override this method to return case-specific error message for each case the Signal defines
-     *  (e.g., using switch (this) { ... }).
-     * Templates may be literal text,
-     *  or include "{tokens}" which will be replaced with values from the ErrorContext record.
-     * Currently, there is no support for a literal "{" in a template.
-     */
-    default String template() {
-      return "An error occured.";
+    /** An error message for this case, including specific context where available. */
+    default String message(Context context) {
+      var message = this.code();
+      if (context != null && context.message() instanceof String contextualized) {
+        message = message + ": " + contextualized;
+      } else if (this.description() instanceof String description) {
+        message = message + ": " + description;
+      }
+      return message;
+    }
+
+    default String message() {
+      return this.message(null);
     }
 
     /**
      * The Throwable+Exceptable class this Signal must use.
      *
-     * Override this method IF your Signal class is not enclosed by your desired Exceptable class -
+     * <p> Override this method IF your Signal class is not enclosed by your desired Exceptable class -
      *  otherwise, just let it be.
      * You should keep the same checks in place
      *  (ensuring the Class both extends Throwable, and implements Exceptable)
-     *  as there's no way to enforce a type like <X extends Throwable & Exceptable>.
+     *  as there's no way to enforce a type like {@code <X extends Throwable & Exceptable>}.
      */
     default Class<?> throwableType() {
       Class<?> c = this.getClass().getEnclosingClass();
@@ -179,49 +180,75 @@ public interface Exceptable {
         Exception.class;
     }
 
-    /** Contextual information specific to one or more of this Signal's cases. */
+    /**
+     * Contextual information specific to one or more of this Signal's cases.
+     *
+     * <p> Implementations are expected to be records.
+     * Be aware that default method implementations won't work as expected otherwise.
+     */
     interface Context {
 
       /**
        * Formats the given template based on contextual information.
        *
-       * Supports string replacement of the follow context types:
-       * - primitives, via String.valueOf()
-       * - objects, via .toString()
-       * - arrays of primitives or objects, via above strategies, wrapped in brackets and joined by commas.
+       * <p> Supports string replacement of the following context types:
+       * <ul>
+       * <li> primitives, via String.valueOf()
+       * <li> objects, via .toString()
+       * <li> arrays of primitives or objects, via above strategies, wrapped in brackets and joined by commas.
+       * </ul>
        *
        * It is the implementation's responsibility to ensure that any context referenced in a message template
        *  has a meaningful string representation.
        */
-      default String message(String template) {
-        // non ops
-        if (template == null) {
-          return "";
-        }
-        if (! template.contains("{")) {
-          return template;
-        }
-        // iterate and stringify record components
-        for (RecordComponent rc : this.getClass().getRecordComponents()) {
-          try {
-            Class<?> type = rc.getType();
-            String value;
-            if (type.isArray()) {
-              value = "[" +
-                Arrays.stream((Object[]) rc.getAccessor().invoke(this))
-                  .map(String::valueOf)
-                  .collect(Collectors.joining(", ")) +
-                "]";
-            } else {
-              value = String.valueOf(rc.getAccessor().invoke(this));
+      default String message() {
+        if (this.template() instanceof String template) {
+          if (template.contains("{")) {
+            // iterate and stringify record components
+            for (RecordComponent rc : this.getClass().getRecordComponents()) {
+              try {
+                Class<?> type = rc.getType();
+                String value;
+                if (type.isArray()) {
+                  value = "[" +
+                    Arrays.stream((Object[]) rc.getAccessor().invoke(this))
+                      .map(String::valueOf)
+                      .collect(Collectors.joining(", ")) +
+                    "]";
+                } else {
+                  value = String.valueOf(rc.getAccessor().invoke(this));
+                }
+                // do replacement
+                template = template.replace("{" + rc.getName() + "}", value);
+              } catch (IllegalAccessException | InvocationTargetException e) {
+                // ignore; move on to next
+              }
             }
-            // do replacement
-            template = template.replace("{" + rc.getName() + "}", value);
-          } catch (IllegalAccessException | InvocationTargetException e) {
-            // ignore; move on to next
+            if (! template.contains("{")) {
+              return template;
+            }
           }
         }
-        return template;
+        return null;
+      }
+
+      /**
+       * The message template for this context class.
+       *
+       * <p> Override this method to provide a contextualized message format.
+       * The message may include {@code{tokens}} with names corresponding to Context properties.
+       * String replacement of the following context types is supported:
+       * <ul>
+       * <li> primitives, via {@code String.valueOf(primitive)}
+       * <li> objects, via {@code object.toString()}
+       * <li> arrays of primitives or objects, via above strategies, wrapped in brackets and joined by commas.
+       * </ul>
+       *
+       * It is the implementation's responsibility to ensure that any context referenced in a message template
+       *  has a meaningful string representation.
+       */
+      default String template() {
+        return null;
       }
     }
   }

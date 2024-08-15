@@ -21,13 +21,15 @@ import red.enspi.exceptable.annotation.ExceptableSignal;
 
 @ExceptableSignal(extendsFrom = "java.lang.IllegalArgumentException")
 public enum IllegalArgument implements Signal {
-  BadValue("'{name}' must be {requirement}; '{value}' provided.");
+  BadValue;
 
-  private String template;
-  private IllegalArgument(String template) { this.template = template; }
-  public String template() { return this.template; }
   @Override
   public Class<?> throwableType() { return IllegalArgumentException.class; }
 
-  public record Context<V>(String name, V value, String requirement) implements Signal.Context {}
+  public record Context<V>(String name, V value, String requirement) implements Signal.Context {
+    @Override
+    public String template() {
+      return "'{name}' must be {requirement}; '{value}' provided.";
+    }
+  }
 }

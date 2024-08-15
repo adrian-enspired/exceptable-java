@@ -21,14 +21,15 @@ import red.enspi.exceptable.Exception;
 import red.enspi.exceptable.Exceptable.Signal;
 
 public enum Error implements Signal {
-  UncaughtException("Uncaught exception: {cause}"),
-  UnknownError("Unknown error.");
+  UncaughtException, UnknownError;
 
-  private String template;
-  private Error(String template) { this.template = template; }
-  public String template() { return this.template; }
   @Override
   public Class<?> throwableType() { return Exception.class; }
 
-  public record Context(Throwable cause, Signal.Context more) implements Signal.Context {}
+  public record Context(Throwable cause, Signal.Context more) implements Signal.Context {
+    @Override
+    public String template() {
+      return "Uncaught exception: {cause}";
+    }
+  }
 }

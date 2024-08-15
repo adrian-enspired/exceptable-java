@@ -47,7 +47,7 @@ public class RuntimeExceptionSources {
       Arguments.of(
         Runtime.UnknownError,
         null,
-        "red.enspi.exceptable.signal.Runtime.UnknownError: Unknown runtime error."),
+        "red.enspi.exceptable.signal.Runtime.UnknownError"),
       Arguments.of(
         Runtime.UncaughtException,
         new Runtime.Context(new java.lang.Exception("This is a test."), null),

@@ -109,7 +109,7 @@ public class Try {
   }
 
   /** Invokes a callback, wrapping the return value (or any thrown exception) in a Result object. */
-  public static <V> Result<V> result(Supplier<V> callback) {
+  public static <V, S extends Signal> Result<V, S> result(Supplier<V> callback) {
     try {
       return Result.success(callback.get());
     } catch (Throwable t) {
@@ -117,8 +117,8 @@ public class Try {
     }
   }
 
-  public interface ResultSupplier<V> { Result<V> get(); }
-  public static <V> Result<V> result(ResultSupplier<V> callback) {
+  public interface ResultSupplier<V, S extends Signal> { Result<V, S> get(); }
+  public static <V, S extends Signal> Result<V, S> result(ResultSupplier<V, S> callback) {
     try {
       return callback.get();
     } catch (Throwable t) {
@@ -141,32 +141,33 @@ public class Try {
    * The `error` must be populated (possibly indirectly, via the `cause`).
    * The `context` and/or `cause` may be populated, if relevant and available.
    */
-  public static record Result<V>(V value, Signal signal, Context context, Throwable cause) {
+  public static record Result<V, S extends Signal>(V value, S signal, Context context, Throwable cause) {
 
     /** Factory: builds a failure Result. */
-    public static <V> Result<V> failure(Signal signal, Context context) {
+    public static <V, S extends Signal> Result<V, S> failure(S signal, Context context) {
       return new Result<>(null, signal, context, null);
     }
 
     /** Factory: builds a failure Result from the given Signal. */
-    public static <V> Result<V> failure(Signal signal) {
+    public static <V, S extends Signal> Result<V, S> failure(S signal) {
       return new Result<>(null, signal, null, null);
     }
 
     /** Factory: builds a failure Result from the given Throwable. */
-    public static <V> Result<V> failure(Throwable cause) {
+    public static <V, S extends Signal> Result<V, S> failure(Throwable cause) {
       return new Result<>(null, null, null, cause);
     }
 
     /** Factory: builds a success Result from the given return value. */
-    public static <V> Result<V> success(V value) {
+    public static <V, S extends Signal> Result<V, S> success(V value) {
       return new Result<>(value, null, null, null);
     }
 
+    @SuppressWarnings("unchecked")
     public Result {
       // fill an empty error from a given exception
       if (signal == null && cause != null) {
-        signal = (cause instanceof Exceptable x) ? x.signal() : Error.UncaughtException;
+        signal = (S) ((cause instanceof Exceptable x) ? x.signal() : Error.UncaughtException);
       }
     }
 
@@ -186,7 +187,7 @@ public class Try {
     }
 
     /** Throws if this is a failure Result. */
-    public Result<V> throwOnFailure() throws Throwable {
+    public Result<V, S> throwOnFailure() throws Throwable {
       if (this.isFailure()) {
         if (this.cause() instanceof Throwable t) {
           throw (t instanceof Exceptable x && x.is(Error.UncaughtException)) ?
