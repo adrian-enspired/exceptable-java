@@ -29,42 +29,43 @@ import red.enspi.exceptable.signal.Error;
 public class Try {
 
   /**
-   * Invokes a callback, returning its value.
+   * Invokes a callback, returning a Result with its value.
    *
-   * If the callback throws any of the given Exception types, they are rethrown as the cause of the given Signal.
+   * <p> If the callback throws any of the given Exception types,
+   *  they are returned in the Failure Result as the cause of the given Signal.
    * Throws Error.UncaughtException if any other Exception type is thrown.
    */
-  public static <T, S extends Signal> T collect(
+  public static <T, S extends Signal> Result<T, S> collect(
     Supplier<T> callback,
     Class<? extends Throwable>[] throwables,
     S ifCaught
   ) throws Throwable {
     try {
-      return callback.get();
+      return Result.success(callback.get());
     } catch (Throwable t) {
       Class<?> tc = t.getClass();
       for (Class<?> c : throwables) {
         if (c.equals(tc)) {
-          throw ifCaught.throwable(t);
+          return Result.failure(ifCaught, t);
         }
       }
       throw Error.UncaughtException.throwable(t);
     }
   }
 
-  public static <T, S extends Signal> T collect(
+  public static <T, S extends Signal> Result<T, S> collect(
     Supplier<T> callback,
     Signal[] signals,
     S ifCaught
   ) throws Throwable {
     try {
-      return callback.get();
+      return Result.success(callback.get());
     } catch (Throwable t) {
       Throwable tx = Error.UncaughtException.throwable(t);
       if (tx instanceof Exceptable x) {
         for (Signal s : signals) {
           if (x.has(s)) {
-            throw ifCaught.throwable(t);
+            return Result.failure(ifCaught, t);
           }
         }
       }
@@ -206,6 +207,11 @@ public class Try {
     /** Factory: builds a failure Result from the given Throwable. */
     public static <V, S extends Signal> Result<V, S> failure(Throwable cause) {
       return new Failure<>(null, null, cause);
+    }
+
+    /** Factory: builds a failure Result from the given Signal and cause. */
+    public static <V, S extends Signal> Result<V, S> failure(S signal, Throwable cause) {
+      return new Failure<>(signal, new Error.Context(cause, null), cause);
     }
 
     /** Factory: builds a success Result from the given return value. */
