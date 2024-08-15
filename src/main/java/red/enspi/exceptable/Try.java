@@ -111,8 +111,16 @@ public class Try {
   /** Invokes a callback, wrapping the return value (or any thrown exception) in a Result object. */
   public static <V> Result<V> result(Supplier<V> callback) {
     try {
-      V value = callback.get();
-      return Result.success(value);
+      return Result.success(callback.get());
+    } catch (Throwable t) {
+      return Result.failure(t);
+    }
+  }
+
+  public interface ResultSupplier<V> { Result<V> get(); }
+  public static <V> Result<V> result(ResultSupplier<V> callback) {
+    try {
+      return callback.get();
     } catch (Throwable t) {
       return Result.failure(t);
     }
@@ -137,7 +145,7 @@ public class Try {
 
     /** Factory: builds a failure Result. */
     public static <V> Result<V> failure(Signal signal, Context context) {
-      return new Result<>(null, signal, null, null);
+      return new Result<>(null, signal, context, null);
     }
 
     /** Factory: builds a failure Result from the given Signal. */
@@ -159,13 +167,6 @@ public class Try {
       // fill an empty error from a given exception
       if (signal == null && cause != null) {
         signal = (cause instanceof Exceptable x) ? x.signal() : Error.UncaughtException;
-      }
-      // enforce sanity (we cannot succeed _and_ fail). should this throw?
-      if (signal == null) {
-        context = null;
-        cause = null;
-      } else {
-        value = null;
       }
     }
 
