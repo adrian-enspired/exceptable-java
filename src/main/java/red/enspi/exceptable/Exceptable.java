@@ -106,30 +106,30 @@ public interface Exceptable {
   }
 
   /** Specific error scenarios for this Exceptable. */
-  interface Signal {
+  interface Signal<T extends Throwable> {
 
     /** Factory: builds an Exceptable from this case. */
-    default Throwable throwable(Context context, Throwable cause) {
+    @SuppressWarnings("unchecked")
+    default T throwable(Context context, Throwable cause) {
       try {
-        return Throwable.class.cast(
-          this.throwableType()
-            .getDeclaredConstructor(Signal.class, Context.class, Throwable.class)
-            .newInstance(this, context, cause));
+        return this.throwableType()
+          .getDeclaredConstructor(Signal.class, Context.class, Throwable.class)
+          .newInstance(this, context, cause);
       } catch (Throwable t) {
         // problem building the intended Exceptable. fall back on using a basic Exceptable.
-        return new Exception(this, context, cause);
+        return (T) new Exception(this, context, cause);
       }
     }
 
-    default Throwable throwable(Context context) {
+    default T throwable(Context context) {
       return this.throwable(context, null);
     }
 
-    default Throwable throwable(Throwable cause) {
+    default T throwable(Throwable cause) {
       return this.throwable(null, cause);
     }
 
-    default Throwable throwable() {
+    default T throwable() {
       return this.throwable(null, null);
     }
 
@@ -164,21 +164,8 @@ public interface Exceptable {
       return this.message(null);
     }
 
-    /**
-     * The Throwable+Exceptable class this Signal must use.
-     *
-     * <p> Override this method IF your Signal class is not enclosed by your desired Exceptable class -
-     *  otherwise, just let it be.
-     * You should keep the same checks in place
-     *  (ensuring the Class both extends Throwable, and implements Exceptable)
-     *  as there's no way to enforce a type like {@code <X extends Throwable & Exceptable>}.
-     */
-    default Class<?> throwableType() {
-      Class<?> c = this.getClass().getEnclosingClass();
-      return (c != null && Exceptable.class.isAssignableFrom(c) && Throwable.class.isAssignableFrom(c)) ?
-        c :
-        Exception.class;
-    }
+    /** The Throwable+Exceptable class this Signal must use. */
+    Class<T> throwableType();
 
     /**
      * Contextual information specific to one or more of this Signal's cases.

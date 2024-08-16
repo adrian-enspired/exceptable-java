@@ -20,11 +20,11 @@ import java.lang.Throwable;
 import red.enspi.exceptable.Exception;
 import red.enspi.exceptable.Exceptable.Signal;
 
-public enum Error implements Signal {
+/** Nonspecific error signals. */
+public enum Error implements Signal<Exception> {
   UncaughtException, UnknownError;
 
-  @Override
-  public Class<?> throwableType() { return Exception.class; }
+  public Class<Exception> throwableType() { return Exception.class; }
 
   public record Context(Throwable cause, Signal.Context more) implements Signal.Context {
     @Override

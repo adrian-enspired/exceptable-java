@@ -22,13 +22,12 @@ import red.enspi.exceptable.Exceptable.Signal;
 import red.enspi.exceptable.annotation.ExceptableSignal;
 
 /** Signals for unchecked exceptions. */
-
 @ExceptableSignal(extendsFrom = "java.lang.RuntimeException")
-public enum Runtime implements Signal {
+public enum Runtime implements Signal<RuntimeException> {
   UncaughtException, UnknownError;
 
   @Override
-  public Class<?> throwableType() { return RuntimeException.class; }
+  public Class<RuntimeException> throwableType() { return RuntimeException.class; }
 
   public record Context(Throwable cause, Signal.Context more) implements Signal.Context {
     @Override

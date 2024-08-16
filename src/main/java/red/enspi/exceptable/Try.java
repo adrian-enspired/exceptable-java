@@ -18,7 +18,7 @@ package red.enspi.exceptable;
 
 import java.lang.Class;
 import java.lang.Throwable;
-
+import java.util.List;
 import java.util.function.Supplier;
 
 import red.enspi.exceptable.Exceptable.Signal;
@@ -33,11 +33,12 @@ public class Try {
    *
    * <p> If the callback throws any of the given Exception types,
    *  they are returned in the Failure Result as the cause of the given Signal.
+   * The exact type is checked first, then parent types if no match is found.
    * Throws Error.UncaughtException if any other Exception type is thrown.
    */
-  public static <T, S extends Signal> Result<T, S> collect(
+  public static <T, S extends Signal<?>> Result<T, S> collectX(
     Supplier<T> callback,
-    Class<? extends Throwable>[] throwables,
+    List<Class<? extends Throwable>> throwables,
     S ifCaught
   ) throws Throwable {
     try {
@@ -49,13 +50,18 @@ public class Try {
           return Result.failure(ifCaught, t);
         }
       }
+      for (Class<?> c : throwables) {
+        if (c.isAssignableFrom(tc)) {
+          return Result.failure(ifCaught, t);
+        }
+      }
       throw Error.UncaughtException.throwable(t);
     }
   }
 
-  public static <T, S extends Signal> Result<T, S> collect(
+  public static <T, S extends Signal<?>> Result<T, S> collect(
     Supplier<T> callback,
-    Signal[] signals,
+    List<Signal<?>> signals,
     S ifCaught
   ) throws Throwable {
     try {
@@ -63,7 +69,7 @@ public class Try {
     } catch (Throwable t) {
       Throwable tx = Error.UncaughtException.throwable(t);
       if (tx instanceof Exceptable x) {
-        for (Signal s : signals) {
+        for (Signal<?> s : signals) {
           if (x.has(s)) {
             return Result.failure(ifCaught, t);
           }
@@ -79,7 +85,7 @@ public class Try {
    * If the callback throws any of the given Exception types, they are caught and `null` is returned.
    * Throws Error.UncaughtException if any other Exception type is thrown.
    */
-  public static <T> T ignore(Supplier<T> callback, Class<? extends Throwable>[] throwables) throws Throwable {
+  public static <T> T ignoreX(Supplier<T> callback, List<Class<? extends Throwable>> throwables) throws Throwable {
     try {
       return callback.get();
     } catch (Throwable t) {
@@ -93,13 +99,13 @@ public class Try {
     }
   }
 
-  public static <T> T ignore(Supplier<T> callback, Signal[] signals) throws Throwable {
+  public static <T> T ignore(Supplier<T> callback, List<Signal<?>> signals) throws Throwable {
     try {
       return callback.get();
     } catch (Throwable t) {
       Throwable tx = Error.UncaughtException.throwable(t);
       if (tx instanceof Exceptable x) {
-        for (Signal s : signals) {
+        for (Signal<?> s : signals) {
           if (x.has(s)) {
             return null;
           }
@@ -110,7 +116,7 @@ public class Try {
   }
 
   /** Invokes a callback, wrapping the return value (or any thrown exception) in a Result object. */
-  public static <V, S extends Signal> Result<V, S> result(Supplier<V> callback) {
+  public static <V, S extends Signal<?>> Result<V, S> result(Supplier<V> callback) {
     try {
       return Result.success(callback.get());
     } catch (Throwable t) {
@@ -118,8 +124,8 @@ public class Try {
     }
   }
 
-  public interface ResultSupplier<V, S extends Signal> { Result<V, S> get(); }
-  public static <V, S extends Signal> Result<V, S> result(ResultSupplier<V, S> callback) {
+  public interface ResultSupplier<V, S extends Signal<?>> { Result<V, S> get(); }
+  public static <V, S extends Signal<?>> Result<V, S> result(ResultSupplier<V, S> callback) {
     try {
       return callback.get();
     } catch (Throwable t) {
@@ -161,10 +167,10 @@ public class Try {
    * This automatically extracts the {@code .value()} from a Success result,
    *  or throws from a Failure result's {@code .signal()}.
    */
-  public sealed interface Result<V, S extends Signal> permits Result.Success, Result.Failure {
+  public sealed interface Result<V, S extends Signal<?>> permits Result.Success, Result.Failure {
 
     /** A successful result. */
-    record Success<V, S extends Signal>(V value) implements Result<V, S> {
+    record Success<V, S extends Signal<?>>(V value) implements Result<V, S> {
 
       @Override
       public V assuming() {
@@ -173,7 +179,7 @@ public class Try {
     }
 
     /** A failure result. */
-    record Failure<V, S extends Signal>(S signal, Context context, Throwable cause) implements Result<V, S> {
+    record Failure<V, S extends Signal<?>>(S signal, Context context, Throwable cause) implements Result<V, S> {
 
       @SuppressWarnings("unchecked")
       public Failure {
@@ -195,27 +201,27 @@ public class Try {
     }
 
     /** Factory: builds a failure Result. */
-    public static <V, S extends Signal> Result<V, S> failure(S signal, Context context) {
+    public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Context context) {
       return new Failure<>(signal, context, null);
     }
 
     /** Factory: builds a failure Result from the given Signal. */
-    public static <V, S extends Signal> Result<V, S> failure(S signal) {
+    public static <V, S extends Signal<?>> Result<V, S> failure(S signal) {
       return new Failure<>(signal, null, null);
     }
 
     /** Factory: builds a failure Result from the given Throwable. */
-    public static <V, S extends Signal> Result<V, S> failure(Throwable cause) {
+    public static <V, S extends Signal<?>> Result<V, S> failure(Throwable cause) {
       return new Failure<>(null, null, cause);
     }
 
     /** Factory: builds a failure Result from the given Signal and cause. */
-    public static <V, S extends Signal> Result<V, S> failure(S signal, Throwable cause) {
+    public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Throwable cause) {
       return new Failure<>(signal, new Error.Context(cause, null), cause);
     }
 
     /** Factory: builds a success Result from the given return value. */
-    public static <V, S extends Signal> Result<V, S> success(V value) {
+    public static <V, S extends Signal<?>> Result<V, S> success(V value) {
       return new Success<>(value);
     }
 

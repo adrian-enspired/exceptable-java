@@ -19,12 +19,13 @@ package red.enspi.exceptable.signal;
 import red.enspi.exceptable.Exceptable.Signal;
 import red.enspi.exceptable.annotation.ExceptableSignal;
 
+/** Signals for illegal arguments. */
 @ExceptableSignal(extendsFrom = "java.lang.IllegalArgumentException")
-public enum IllegalArgument implements Signal {
+public enum IllegalArgument implements Signal<IllegalArgumentException> {
   BadValue;
 
   @Override
-  public Class<?> throwableType() { return IllegalArgumentException.class; }
+  public Class<IllegalArgumentException> throwableType() { return IllegalArgumentException.class; }
 
   public record Context<V>(String name, V value, String requirement) implements Signal.Context {
     @Override
