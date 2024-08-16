@@ -181,10 +181,7 @@ public class TryTest {
 
     public static enum Signal implements Exceptable.Signal<RuntimeException> {
       Six;
-
       public String message() { return "He's in the hotel!"; }
-
-      public Class<RuntimeException> throwableType() { return RuntimeException.class; }
     }
 
     public String getValue() {

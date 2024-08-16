@@ -24,8 +24,6 @@ import red.enspi.exceptable.Exceptable.Signal;
 public enum Error implements Signal<Exception> {
   UncaughtException, UnknownError;
 
-  public Class<Exception> throwableType() { return Exception.class; }
-
   public record Context(Throwable cause, Signal.Context more) implements Signal.Context {
     @Override
     public String template() {

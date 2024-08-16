@@ -24,9 +24,6 @@ import red.enspi.exceptable.annotation.ExceptableSignal;
 public enum IllegalArgument implements Signal<IllegalArgumentException> {
   BadValue;
 
-  @Override
-  public Class<IllegalArgumentException> throwableType() { return IllegalArgumentException.class; }
-
   public record Context<V>(String name, V value, String requirement) implements Signal.Context {
     @Override
     public String template() {

@@ -18,6 +18,7 @@ package red.enspi.exceptable;
 
 import java.lang.Class;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.RecordComponent;
 import java.lang.Throwable;
 
@@ -112,9 +113,12 @@ public interface Exceptable {
     @SuppressWarnings("unchecked")
     default T throwable(Context context, Throwable cause) {
       try {
-        return this.throwableType()
-          .getDeclaredConstructor(Signal.class, Context.class, Throwable.class)
-          .newInstance(this, context, cause);
+        Class<T> type = this.throwableType();
+        return Exceptable.class.isAssignableFrom(type) ?
+          type.getDeclaredConstructor(Signal.class, Context.class, Throwable.class)
+            .newInstance(this, context, cause) :
+          type.getDeclaredConstructor(String.class, Throwable.class)
+            .newInstance(this.message(context), cause);
       } catch (Throwable t) {
         // problem building the intended Exceptable. fall back on using a basic Exceptable.
         return (T) new Exception(this, context, cause);
@@ -165,7 +169,17 @@ public interface Exceptable {
     }
 
     /** The Throwable+Exceptable class this Signal must use. */
-    Class<T> throwableType();
+    @SuppressWarnings("unchecked")
+    default Class<T> throwableType() {
+      for (var genericInterface : this.getClass().getGenericInterfaces()) {
+        if (genericInterface instanceof ParameterizedType parameterizedInterface &&
+          parameterizedInterface.getRawType() == Signal.class) {
+          return (Class<T>) parameterizedInterface.getActualTypeArguments()[0];
+        }
+      }
+      // for the compiler; we'll never actually get here
+      return (Class<T>) Exception.class;
+    }
 
     /**
      * Contextual information specific to one or more of this Signal's cases.

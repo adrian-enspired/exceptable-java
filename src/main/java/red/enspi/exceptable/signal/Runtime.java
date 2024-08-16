@@ -26,9 +26,6 @@ import red.enspi.exceptable.annotation.ExceptableSignal;
 public enum Runtime implements Signal<RuntimeException> {
   UncaughtException, UnknownError;
 
-  @Override
-  public Class<RuntimeException> throwableType() { return RuntimeException.class; }
-
   public record Context(Throwable cause, Signal.Context more) implements Signal.Context {
     @Override
     public String template() {
