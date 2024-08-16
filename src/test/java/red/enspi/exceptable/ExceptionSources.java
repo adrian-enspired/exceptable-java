@@ -45,7 +45,7 @@ public class ExceptionSources {
 
   public static Stream<Arguments> SignalMessage_source() {
     return Stream.of(
-      Arguments.of(Error.UnknownError, null, "red.enspi.exceptable.signal.Error.UnknownError: Unknown error."),
+      Arguments.of(Error.UnknownError, null, "red.enspi.exceptable.signal.Error.UnknownError"),
       Arguments.of(
         Error.UncaughtException,
         null,

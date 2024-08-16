@@ -24,35 +24,39 @@ import red.enspi.exceptable.Exceptable.Signal.Context;
 
 /**
  * To implement Test classes for Exceptables,
- * - implement this interface.
- * - implement the test methods. make use of the `..._assertions()` methods.
- * - implement the source methods for each test method.
+ * <ol>
+ *   <li> implement this interface.
+ *   <li> add the {@code ExceptableTestSource} annotation, with the classname of the Exceptable you're testing.
+ *   <li> implement the source methods for each test method.
+ * </ol>
  *
- * todo: annotation that generates test classes from given provider methods. e.g.,
- * ```
- * @ExceptableTestSource("fully.qualified.ExceptableName")
+ * For example,
+ * <pre>{@code
+ * @ExceptableTestSource (exceptableClass = "fully.qualified.ExceptableName")
  * public class ExceptionTestSources {
  *   public static Stream<Arguments> SignalThrowable_source() {
  *     return Stream.of(
  *       Arguments.of( . . . ),
  *       . . .
- * ```
+ * }</pre>
+ *
  * will generate something like...
- * ```
+ * <pre>{@code
  * public class ExceptableNameTest extends ExceptableTest {
  *
  *   public static Stream<Arguments> SignalThrowable_source() {
  *     return Stream.of(
  *       Arguments.of( . . . ),
  *       . . .
+ *     );
  *   }
  *
  *   @ParameterizedTest
- *   @MethodSource("SignalThrowable_source")
+ *   @MethodSource ("SignalThrowable_source")
  *   default void SignalThrowable(Signal signal, Context context, Throwable cause) {
  *     Throwable actual = signal.throwable(context, cause);
  *     . . .
- * ```
+ * }</pre>
  */
 public interface ExceptableTest {
 
@@ -63,15 +67,19 @@ public interface ExceptableTest {
    * Constructor tests.
    *
    * This is a `@ParameterizedTest` and requires a source that provides:
-   * - `Signal`: the case from a Signal enum to be tested.
-   * - `Context`: a Context record appropriate for the Signal being tested.
-   * - `Throwable`: an Exception to use as the cause of the Signal being tested.
+   * <ul>
+   * <li> `Signal`: the case from a Signal enum to be tested.
+   * <li> `Context`: a Context record appropriate for the Signal being tested.
+   * <li> `Throwable`: an Exception to use as the cause of the Signal being tested.
+   * </ul>
    *
    * For each Signal tested, you should have (at a minimum) four test cases:
-   * - with a context object and cause.
-   * - with context only.
-   * - with cause only.
-   * - with neither.
+   * <ul>
+   * <li> with a context object and cause.
+   * <li> with context only.
+   * <li> with cause only.
+   * <li> with neither.
+   * </ul>
    *
    * Note this test is for successful test scenarios (i.e., correct usage).
    * However, it should also be able verify that a Signal with mismatched context is handled gracefully.
@@ -82,8 +90,10 @@ public interface ExceptableTest {
    * Tests that an Exceptable Signal provides the expected error code.
    *
    * This is a `@ParameterizedTest` and requires a source that provides:
-   * - `Signal`: the case from a Signal enum to be tested.
-   * - `String`: the expected error code.
+   * <ul>
+   * <li> `Signal`: the case from a Signal enum to be tested.
+   * <li> `String`: the expected error code.
+   * </ul>
    */
   void SignalCode(Signal signal, String expected);
 
@@ -91,13 +101,17 @@ public interface ExceptableTest {
    * Tests that an Exceptable.Signal case can build an error message using a given Context object.
    *
    * This is a `@ParameterizedTest` and requires a source that provides:
-   * - `Signal`: the case from a Signal enum to be tested.
-   * - `Context`: a Context record appropriate for the Signal being tested.
-   * - `String`: the expected error message.
+   * <ul>
+   * <li> `Signal`: the case from a Signal enum to be tested.
+   * <li> `Context`: a Context record appropriate for the Signal being tested.
+   * <li> `String`: the expected error message.
+   * </ul>
    *
    * For each Signal tested, you should have (at a minimum) two test cases:
-   * - with a context object.
-   * - without.
+   * <ul>
+   * <li> with a context object.
+   * <li> without.
+   * </ul>
    *
    * Note this test is for successful test scenarios (i.e., correct usage).
    * However, it should also be able verify that a Signal with mismatched context is handled gracefully.
@@ -108,9 +122,11 @@ public interface ExceptableTest {
    * Tests that an Exceptable.Signal case can properly build an Exceptable instance.
    *
    * This is a `@ParameterizedTest` and requires a source that provides:
-   * - `Signal`: the case from a Signal enum to be tested.
-   * - `Context`: a Context record appropriate for the Signal being tested.
-   * - `Throwable`: an Exception to use as the cause of the Signal being tested.
+   * <ul>
+   * <li> `Signal`: the case from a Signal enum to be tested.
+   * <li> `Context`: a Context record appropriate for the Signal being tested.
+   * <li> `Throwable`: an Exception to use as the cause of the Signal being tested.
+   * </ul>
    *
    * This test takes the same arguments as construct() and implementations can likely use the same source;
    *  see .construct() for details.

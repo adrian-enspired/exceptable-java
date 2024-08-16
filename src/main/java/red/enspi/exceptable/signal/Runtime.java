@@ -22,17 +22,14 @@ import red.enspi.exceptable.Exceptable.Signal;
 import red.enspi.exceptable.annotation.ExceptableSignal;
 
 /** Signals for unchecked exceptions. */
-
 @ExceptableSignal(extendsFrom = "java.lang.RuntimeException")
-public enum Runtime implements Signal {
-  UncaughtException("Uncaught runtime exception: {cause}"),
-  UnknownError("Unknown runtime error.");
+public enum Runtime implements Signal<RuntimeException> {
+  UncaughtException, UnknownError;
 
-  private String template;
-  private Runtime(String template) { this.template = template; }
-  public String template() { return this.template; }
-  @Override
-  public Class<?> throwableType() { return RuntimeException.class; }
-
-  public record Context(Throwable cause, Signal.Context more) implements Signal.Context {}
+  public record Context(Throwable cause, Signal.Context more) implements Signal.Context {
+    @Override
+    public String template() {
+      return "Uncaught runtime exception: {cause}";
+    }
+  }
 }

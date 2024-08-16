@@ -18,7 +18,7 @@ package red.enspi.exceptable;
 
 import java.lang.Class;
 import java.lang.Throwable;
-
+import java.util.List;
 import java.util.function.Supplier;
 
 import red.enspi.exceptable.Exceptable.Signal;
@@ -29,42 +29,49 @@ import red.enspi.exceptable.signal.Error;
 public class Try {
 
   /**
-   * Invokes a callback, returning its value.
+   * Invokes a callback, returning a Result with its value.
    *
-   * If the callback throws any of the given Exception types, they are rethrown as the cause of the given Signal.
+   * <p> If the callback throws any of the given Exception types,
+   *  they are returned in the Failure Result as the cause of the given Signal.
+   * The exact type is checked first, then parent types if no match is found.
    * Throws Error.UncaughtException if any other Exception type is thrown.
    */
-  public static <T, S extends Signal> T collect(
+  public static <T, S extends Signal<?>> Result<T, S> collectX(
     Supplier<T> callback,
-    Class<? extends Throwable>[] throwables,
+    List<Class<? extends Throwable>> throwables,
     S ifCaught
   ) throws Throwable {
     try {
-      return callback.get();
+      return Result.success(callback.get());
     } catch (Throwable t) {
       Class<?> tc = t.getClass();
       for (Class<?> c : throwables) {
         if (c.equals(tc)) {
-          throw ifCaught.throwable(t);
+          return Result.failure(ifCaught, t);
+        }
+      }
+      for (Class<?> c : throwables) {
+        if (c.isAssignableFrom(tc)) {
+          return Result.failure(ifCaught, t);
         }
       }
       throw Error.UncaughtException.throwable(t);
     }
   }
 
-  public static <T, S extends Signal> T collect(
+  public static <T, S extends Signal<?>> Result<T, S> collect(
     Supplier<T> callback,
-    Signal[] signals,
+    List<Signal<?>> signals,
     S ifCaught
   ) throws Throwable {
     try {
-      return callback.get();
+      return Result.success(callback.get());
     } catch (Throwable t) {
       Throwable tx = Error.UncaughtException.throwable(t);
       if (tx instanceof Exceptable x) {
-        for (Signal s : signals) {
+        for (Signal<?> s : signals) {
           if (x.has(s)) {
-            throw ifCaught.throwable(t);
+            return Result.failure(ifCaught, t);
           }
         }
       }
@@ -78,7 +85,7 @@ public class Try {
    * If the callback throws any of the given Exception types, they are caught and `null` is returned.
    * Throws Error.UncaughtException if any other Exception type is thrown.
    */
-  public static <T> T ignore(Supplier<T> callback, Class<? extends Throwable>[] throwables) throws Throwable {
+  public static <T> T ignoreX(Supplier<T> callback, List<Class<? extends Throwable>> throwables) throws Throwable {
     try {
       return callback.get();
     } catch (Throwable t) {
@@ -92,13 +99,13 @@ public class Try {
     }
   }
 
-  public static <T> T ignore(Supplier<T> callback, Signal[] signals) throws Throwable {
+  public static <T> T ignore(Supplier<T> callback, List<Signal<?>> signals) throws Throwable {
     try {
       return callback.get();
     } catch (Throwable t) {
       Throwable tx = Error.UncaughtException.throwable(t);
       if (tx instanceof Exceptable x) {
-        for (Signal s : signals) {
+        for (Signal<?> s : signals) {
           if (x.has(s)) {
             return null;
           }
@@ -109,84 +116,81 @@ public class Try {
   }
 
   /** Invokes a callback, wrapping the return value (or any thrown exception) in a Result object. */
-  public static <V> Result<V> result(Supplier<V> callback) {
+  public static <V, S extends Signal<?>> Result<V, S> result(Supplier<V> callback) {
     try {
-      V value = callback.get();
-      return Result.success(value);
+      return Result.success(callback.get());
+    } catch (Throwable t) {
+      return Result.failure(t);
+    }
+  }
+
+  public interface ResultSupplier<V, S extends Signal<?>> { Result<V, S> get(); }
+  public static <V, S extends Signal<?>> Result<V, S> result(ResultSupplier<V, S> callback) {
+    try {
+      return callback.get();
     } catch (Throwable t) {
       return Result.failure(t);
     }
   }
 
   /**
-   * A functional Result object.
+   * Result types.
    *
-   * Contains the following components:
-   * - <V> `value`: the "success" value of the Result.
-   * - Signal `error`: the "failure" value of the Result.
-   * - Context `context`: contextual information about the failure.
-   * - Throwable `cause`: the exception that caused the failure.
+   * <p> A Success Result holds the method's return value.
+   * You can build a Success result directly, or by using the factory method {@code Result.success(V)}.
    *
-   * For a successful result, only the `value` should be populated.
+   * <p> A Failure Result holds an error Signal describing the reason for failure.
+   * It may also contain a context object and/or a cause.
+   * You can build a Failure result directly, or by using one of the factory methods:
+   * <ul>
+   * <li> {@code Result.failure(S, Context, Throwable)}
+   * <li> {@code Result.failure(S, Context)}
+   * <li> {@code Result.failure(S)}
+   * <li> {@code Result.failure(Throwable)}
+   * </ul>
    *
-   * For a failure result, the `value` must be `null`.
-   * The `error` must be populated (possibly indirectly, via the `cause`).
-   * The `context` and/or `cause` may be populated, if relevant and available.
+   * Result objects may be inspected and used/acted upon in an enhanced switch expression.
+   * For example, given a method that returns a {@code Result<Party, FauxPas>}:
+   * <pre>{@code
+   * switch (result) {
+   *   case Result.Success party -> party.value().allNightLong();
+   *   case Result.Failure fauxPas -> switch (fauxPas.signal()) {
+   *     case FauxPas.minor -> Party.tryAgain();
+   *     case FauxPas.major -> leave();
+   *   };
+   * };
+   * }</pre>
+   *
+   * If you have no expectation that a method will produce a Failure result (or no recourse if it does),
+   *  you can _assume_ it is successful and continue with your happy-path code:
+   * <pre>{@code result.assuming().allNightLong();}</pre>
+   * This automatically extracts the {@code .value()} from a Success result,
+   *  or throws from a Failure result's {@code .signal()}.
    */
-  public static record Result<V>(V value, Signal signal, Context context, Throwable cause) {
+  public sealed interface Result<V, S extends Signal<?>> permits Result.Success, Result.Failure {
 
-    /** Factory: builds a failure Result. */
-    public static <V> Result<V> failure(Signal signal, Context context) {
-      return new Result<>(null, signal, null, null);
-    }
+    /** A successful result. */
+    record Success<V, S extends Signal<?>>(V value) implements Result<V, S> {
 
-    /** Factory: builds a failure Result from the given Signal. */
-    public static <V> Result<V> failure(Signal signal) {
-      return new Result<>(null, signal, null, null);
-    }
-
-    /** Factory: builds a failure Result from the given Throwable. */
-    public static <V> Result<V> failure(Throwable cause) {
-      return new Result<>(null, null, null, cause);
-    }
-
-    /** Factory: builds a success Result from the given return value. */
-    public static <V> Result<V> success(V value) {
-      return new Result<>(value, null, null, null);
-    }
-
-    public Result {
-      // fill an empty error from a given exception
-      if (signal == null && cause != null) {
-        signal = (cause instanceof Exceptable x) ? x.signal() : Error.UncaughtException;
-      }
-      // enforce sanity (we cannot succeed _and_ fail). should this throw?
-      if (signal == null) {
-        context = null;
-        cause = null;
-      } else {
-        value = null;
+      @Override
+      public V assuming() {
+        return this.value();
       }
     }
 
-    /** Assumes the Result is successful and tries to return its value. */
-    public V assuming() throws Throwable {
-      return this.throwOnFailure().value();
-    }
+    /** A failure result. */
+    record Failure<V, S extends Signal<?>>(S signal, Context context, Throwable cause) implements Result<V, S> {
 
-    /** Is this a failure Result? */
-    public boolean isFailure() {
-      return this.signal() != null;
-    }
+      @SuppressWarnings("unchecked")
+      public Failure {
+        // fill an empty error from a given exception
+        if (signal == null && cause != null) {
+          signal = (S) ((cause instanceof Exceptable x) ? x.signal() : Error.UncaughtException);
+        }
+      }
 
-    /** Is this a success Result? */
-    public boolean isSuccess() {
-      return this.signal() == null;
-    }
-
-    /** Throws if this is a failure Result. */
-    public Result<V> throwOnFailure() throws Throwable {
-      if (this.isFailure()) {
+      @Override
+      public V assuming() throws Throwable {
         if (this.cause() instanceof Throwable t) {
           throw (t instanceof Exceptable x && x.is(Error.UncaughtException)) ?
             t :
@@ -194,7 +198,34 @@ public class Try {
         }
         throw this.signal().throwable();
       }
-      return this;
     }
+
+    /** Factory: builds a failure Result. */
+    public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Context context) {
+      return new Failure<>(signal, context, null);
+    }
+
+    /** Factory: builds a failure Result from the given Signal. */
+    public static <V, S extends Signal<?>> Result<V, S> failure(S signal) {
+      return new Failure<>(signal, null, null);
+    }
+
+    /** Factory: builds a failure Result from the given Throwable. */
+    public static <V, S extends Signal<?>> Result<V, S> failure(Throwable cause) {
+      return new Failure<>(null, null, cause);
+    }
+
+    /** Factory: builds a failure Result from the given Signal and cause. */
+    public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Throwable cause) {
+      return new Failure<>(signal, new Error.Context(cause, null), cause);
+    }
+
+    /** Factory: builds a success Result from the given return value. */
+    public static <V, S extends Signal<?>> Result<V, S> success(V value) {
+      return new Success<>(value);
+    }
+
+    /** Assumes the Result is successful and tries to return its value. */
+    V assuming() throws Throwable;
   }
 }
