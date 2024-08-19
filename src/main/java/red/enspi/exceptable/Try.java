@@ -18,7 +18,6 @@ package red.enspi.exceptable;
 
 import java.lang.Class;
 import java.lang.Throwable;
-import java.util.List;
 import java.util.function.Supplier;
 
 import red.enspi.exceptable.Exceptable.Signal;
@@ -36,10 +35,10 @@ public class Try {
    * The exact type is checked first, then parent types if no match is found.
    * Throws Error.UncaughtException if any other Exception type is thrown.
    */
-  public static <T, S extends Signal<?>> Result<T, S> collectX(
+  public static <T, S extends Signal<?>> Result<T, S> collect(
     Supplier<T> callback,
-    List<Class<? extends Throwable>> throwables,
-    S ifCaught
+    S ifCaught,
+    Class<?>... throwables
   ) throws Throwable {
     try {
       return Result.success(callback.get());
@@ -61,8 +60,8 @@ public class Try {
 
   public static <T, S extends Signal<?>> Result<T, S> collect(
     Supplier<T> callback,
-    List<Signal<?>> signals,
-    S ifCaught
+    S ifCaught,
+    Signal<?>... signals
   ) throws Throwable {
     try {
       return Result.success(callback.get());
@@ -85,7 +84,7 @@ public class Try {
    * If the callback throws any of the given Exception types, they are caught and `null` is returned.
    * Throws Error.UncaughtException if any other Exception type is thrown.
    */
-  public static <T> T ignoreX(Supplier<T> callback, List<Class<? extends Throwable>> throwables) throws Throwable {
+  public static <T> T ignore(Supplier<T> callback, Class<?>... throwables) throws Throwable {
     try {
       return callback.get();
     } catch (Throwable t) {
@@ -99,7 +98,7 @@ public class Try {
     }
   }
 
-  public static <T> T ignore(Supplier<T> callback, List<Signal<?>> signals) throws Throwable {
+  public static <T> T ignore(Supplier<T> callback, Signal<?>... signals) throws Throwable {
     try {
       return callback.get();
     } catch (Throwable t) {

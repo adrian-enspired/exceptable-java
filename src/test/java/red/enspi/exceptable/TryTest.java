@@ -21,8 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 import red.enspi.exceptable.signal.Error;
@@ -35,8 +33,8 @@ public class TryTest {
   @Test
   void collectedExceptions() {
     assertDoesNotThrow(() -> {
-      Result<String, Error> actual = Try.collectX(
-        () -> new Trier().throwHappy(), List.of(RuntimeException.class), Error.UncaughtException);
+      Result<String, Error> actual = Try.collect(
+        () -> new Trier().throwHappy(), Error.UncaughtException, RuntimeException.class);
       this.throwHappyResult_assertions(actual);
     });
   }
@@ -45,14 +43,14 @@ public class TryTest {
   void uncollectedExceptions() {
     assertThrows(
       Exception.class,
-      () -> Try.collectX(() -> new Trier().throwHappy(), List.of(Exception.class), Error.UncaughtException));
+      () -> Try.collect(() -> new Trier().throwHappy(), Error.UncaughtException, Exception.class));
   }
 
   @Test
   void collectedSignals() {
     assertDoesNotThrow(() -> {
       Result<String, Error> actual = Try.collect(
-        () -> new Trier().throwHappy(), List.of(Trier.Signal.Six), Error.UncaughtException);
+        () -> new Trier().throwHappy(), Error.UncaughtException, Trier.Signal.Six);
       this.throwHappyResult_assertions(actual);
     });
   }
@@ -62,7 +60,7 @@ public class TryTest {
     assertThrows(
       Exception.class,
       () -> Try.collect(
-        () -> new Trier().throwHappy(), List.of(Error.UnknownError), Error.UncaughtException));
+        () -> new Trier().throwHappy(), Error.UncaughtException, Error.UnknownError));
   }
 
   private void throwHappyResult_assertions(Result<String, Error> actual) {
@@ -83,7 +81,7 @@ public class TryTest {
   @Test
   void ignoredExceptions() {
     assertDoesNotThrow(() -> {
-      String actual = Try.ignoreX(() -> new Trier().throwHappy(), List.of(RuntimeException.class));
+      String actual = Try.ignore(() -> new Trier().throwHappy(), RuntimeException.class);
       assertTrue(actual == null);
     });
   }
@@ -91,7 +89,7 @@ public class TryTest {
   @Test
   void ignoredSignals() {
     assertDoesNotThrow(() -> {
-      String actual = Try.ignore(() -> new Trier().throwHappy(), List.of(Trier.Signal.Six));
+      String actual = Try.ignore(() -> new Trier().throwHappy(), Trier.Signal.Six);
       assertTrue(actual == null);
     });
   }
@@ -100,14 +98,14 @@ public class TryTest {
   void unignoredExceptions() {
     assertThrows(
       Exception.class,
-      () -> Try.ignoreX(() -> new Trier().throwHappy(), List.of(Exception.class)));
+      () -> Try.ignore(() -> new Trier().throwHappy(), Exception.class));
   }
 
   @Test
   void unignoredSignals() {
     assertThrows(
       Exception.class,
-      () -> Try.ignore(() -> new Trier().throwHappy(), List.of(Error.UnknownError)));
+      () -> Try.ignore(() -> new Trier().throwHappy(), Error.UnknownError));
   }
 
   @Test
