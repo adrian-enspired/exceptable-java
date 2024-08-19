@@ -17,10 +17,10 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.annotation.ExceptableSignal;
+//import red.enspi.exceptable.annotation.ExceptableSignal;
 
 /** Signals for illegal arguments. */
-@ExceptableSignal(extendsFrom = "java.lang.IllegalArgumentException")
+//@ExceptableSignal(extendsFrom = "java.lang.IllegalArgumentException")
 public enum IllegalArgument implements Signal<IllegalArgumentException> {
   BadValue;
 

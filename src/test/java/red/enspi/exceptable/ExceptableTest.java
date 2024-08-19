@@ -84,7 +84,7 @@ public interface ExceptableTest {
    * Note this test is for successful test scenarios (i.e., correct usage).
    * However, it should also be able verify that a Signal with mismatched context is handled gracefully.
    */
-  void construct(Signal signal, Context context, Throwable cause);
+  void construct(Signal<?> signal, Context context, Throwable cause);
 
   /**
    * Tests that an Exceptable Signal provides the expected error code.
@@ -95,7 +95,7 @@ public interface ExceptableTest {
    * <li> `String`: the expected error code.
    * </ul>
    */
-  void SignalCode(Signal signal, String expected);
+  void SignalCode(Signal<?> signal, String expected);
 
   /**
    * Tests that an Exceptable.Signal case can build an error message using a given Context object.
@@ -116,7 +116,7 @@ public interface ExceptableTest {
    * Note this test is for successful test scenarios (i.e., correct usage).
    * However, it should also be able verify that a Signal with mismatched context is handled gracefully.
    */
-  void SignalMessage(Signal signal, Context context, String expected);
+  void SignalMessage(Signal<?> signal, Context context, String expected);
 
   /**
    * Tests that an Exceptable.Signal case can properly build an Exceptable instance.
@@ -131,7 +131,7 @@ public interface ExceptableTest {
    * This test takes the same arguments as construct() and implementations can likely use the same source;
    *  see .construct() for details.
    */
-  void SignalThrowable(Signal signal, Context context, Throwable cause);
+  void SignalThrowable(Signal<?> signal, Context context, Throwable cause);
 
   default void cause_assertions(Throwable expected, Exceptable actual) {
     // .cause()
@@ -159,7 +159,7 @@ public interface ExceptableTest {
       "Expected actual.context() to return the same Context instance as constructed.");
   }
 
-  default void message_assertions(String expected, String actual, Signal signal) {
+  default void message_assertions(String expected, String actual, Signal<?> signal) {
     assertTrue(
       actual.startsWith(signal.code()),
       String.format("Expected actual.message() to be prefixed with Signal code, but saw '%s'.", actual));
@@ -169,13 +169,13 @@ public interface ExceptableTest {
       String.format("Expected actual.message() to be '%s', but saw '%s'.", expected, actual));
   }
 
-  default void signal_assertions(Signal expected, Exceptable actual) {
+  default void signal_assertions(Signal<?> expected, Exceptable actual) {
     // .is()
     assertTrue(actual.is(expected), String.format("Expected actual.is(%s) to be true.", expected));
     // .has()
     assertTrue(actual.has(expected), String.format("Expected actual.has(%s) to be true.", expected));
     // .signal()
-    Signal actualSignal = actual.signal();
+    Signal<?> actualSignal = actual.signal();
     assertEquals(
       expected,
       actualSignal,

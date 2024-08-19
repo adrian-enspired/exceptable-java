@@ -21,14 +21,14 @@ import red.enspi.exceptable.signal.Error;
 /** Base Exceptable for checked exceptions. */
 public class Exception extends java.lang.Exception implements Exceptable {
 
-  private final Signal signal;
+  private final Signal<?> signal;
   private final Signal.Context context;
 
   public Exception() {
     this(Error.UnknownError, null, null);
   }
 
-  public Exception(Signal signal, Signal.Context context, Throwable cause) {
+  public Exception(Signal<?> signal, Signal.Context context, Throwable cause) {
     super(
       (signal != null) ? signal.message(context) : Error.UnknownError.message(context),
       cause);
@@ -40,5 +40,5 @@ public class Exception extends java.lang.Exception implements Exceptable {
   public Signal.Context context() { return this.context; }
 
   @Override
-  public Signal signal() { return this.signal; }
+  public Signal<?> signal() { return this.signal; }
 }

@@ -19,10 +19,10 @@ package red.enspi.exceptable.signal;
 import java.lang.Throwable;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.annotation.ExceptableSignal;
+//import red.enspi.exceptable.annotation.ExceptableSignal;
 
 /** Signals for unchecked exceptions. */
-@ExceptableSignal(extendsFrom = "java.lang.RuntimeException")
+// @ExceptableSignal(extendsFrom = "java.lang.RuntimeException")
 public enum Runtime implements Signal<RuntimeException> {
   UncaughtException, UnknownError;
 

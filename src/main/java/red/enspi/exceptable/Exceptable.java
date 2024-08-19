@@ -69,10 +69,10 @@ public interface Exceptable {
   Signal.Context context();
 
   /** The Signal that describes the error case this Exceptable was thrown for. */
-  Signal signal();
+  Signal<?> signal();
 
   /** Does this Exceptable contain the given Signal, anywhere in its chain? */
-  default boolean has(Signal signal) {
+  default boolean has(Signal<?> signal) {
     if (this instanceof Throwable t) {
       while (t instanceof Throwable) {
         if (t instanceof Exceptable x && x.signal() == signal) {
@@ -85,7 +85,7 @@ public interface Exceptable {
   }
 
   /** Was this Exceptable directly caused by the given Signal? */
-  default boolean is(Signal signal) {
+  default boolean is(Signal<?> signal) {
     return this.signal() == signal;
   }
 
