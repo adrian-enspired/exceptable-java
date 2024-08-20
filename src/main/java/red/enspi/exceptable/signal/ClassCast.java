@@ -17,9 +17,9 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.exception.IllegalArgumentException;
+import red.enspi.exceptable.exception.ClassCastException;
 
-/** Indicates that a method has been passed an illegal or inappropriate argument. */
-public enum IllegalArgument implements Signal<IllegalArgumentException> {
+/** Indicates that the code has attempted to cast an object to a subclass of which it is not an instance. */
+public enum ClassCast implements Signal<ClassCastException> {
   UncaughtException, UnknownError;
 }

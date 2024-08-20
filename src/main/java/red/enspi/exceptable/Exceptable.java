@@ -25,6 +25,8 @@ import java.lang.Throwable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+import red.enspi.exceptable.exception.CheckedException;
+
 /**
  * Making exceptions exceptional!
  *
@@ -121,7 +123,7 @@ public interface Exceptable {
             .newInstance(this.message(context), cause);
       } catch (Throwable t) {
         // problem building the intended Exceptable. fall back on using a basic Exceptable.
-        return (T) new Exception(this, context, cause);
+        return (T) new CheckedException(this, context, cause);
       }
     }
 

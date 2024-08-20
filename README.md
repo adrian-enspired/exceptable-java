@@ -87,6 +87,7 @@ switch (result) {
   };
 }
 ```
+Note, this also removes the `try..catch` boilerplate from your code, since `Try` handles it for you.
 
 #### `Try.collect()`
 

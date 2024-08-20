@@ -135,7 +135,10 @@ public class TestSourceProcessor extends AbstractProcessor {
           Diagnostic.Kind.NOTE,
           String.format("Generating Exceptable test suite for %s...", element.getSimpleName()),
           element);
-        var packageName = this.findPackage(element);
+        var packageName = annotation.packageName();
+        if (packageName == null) {
+          packageName = this.findPackage(element);
+        }
         String exceptableClassname = annotation.exceptableClass();
         var subs = new HashMap<String, String>();
         subs.put("{package}", packageName);

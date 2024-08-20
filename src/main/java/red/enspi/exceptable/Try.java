@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 import red.enspi.exceptable.Exceptable.Signal;
 import red.enspi.exceptable.Exceptable.Signal.Context;
-import red.enspi.exceptable.signal.Error;
+import red.enspi.exceptable.signal.Runtime;
 
 /** Utility methods for various error-handling strategies. */
 public class Try {
@@ -33,7 +33,7 @@ public class Try {
    * <p> If the callback throws any of the given Exception types,
    *  they are returned in the Failure Result as the cause of the given Signal.
    * The exact type is checked first, then parent types if no match is found.
-   * Throws Error.UncaughtException if any other Exception type is thrown.
+   * Throws Runtime.UncaughtException if any other Exception type is thrown.
    */
   public static <T, S extends Signal<?>> Result<T, S> collect(
     Supplier<T> callback,
@@ -54,7 +54,7 @@ public class Try {
           return Result.failure(ifCaught, t);
         }
       }
-      throw Error.UncaughtException.throwable(t);
+      throw Runtime.UncaughtException.throwable(t);
     }
   }
 
@@ -66,7 +66,7 @@ public class Try {
     try {
       return Result.success(callback.get());
     } catch (Throwable t) {
-      Throwable tx = Error.UncaughtException.throwable(t);
+      Throwable tx = Runtime.UncaughtException.throwable(t);
       if (tx instanceof Exceptable x) {
         for (Signal<?> s : signals) {
           if (x.has(s)) {
@@ -82,7 +82,7 @@ public class Try {
    * Invokes a callback, returning its value.
    *
    * If the callback throws any of the given Exception types, they are caught and `null` is returned.
-   * Throws Error.UncaughtException if any other Exception type is thrown.
+   * Throws Runtime.UncaughtException if any other Exception type is thrown.
    */
   public static <T> T ignore(Supplier<T> callback, Class<?>... throwables) throws Throwable {
     try {
@@ -94,7 +94,7 @@ public class Try {
           return null;
         }
       }
-      throw Error.UncaughtException.throwable(t);
+      throw Runtime.UncaughtException.throwable(t);
     }
   }
 
@@ -102,7 +102,7 @@ public class Try {
     try {
       return callback.get();
     } catch (Throwable t) {
-      Throwable tx = Error.UncaughtException.throwable(t);
+      Throwable tx = Runtime.UncaughtException.throwable(t);
       if (tx instanceof Exceptable x) {
         for (Signal<?> s : signals) {
           if (x.has(s)) {
@@ -184,16 +184,16 @@ public class Try {
       public Failure {
         // fill an empty error from a given exception
         if (signal == null && cause != null) {
-          signal = (S) ((cause instanceof Exceptable x) ? x.signal() : Error.UncaughtException);
+          signal = (S) ((cause instanceof Exceptable x) ? x.signal() : Runtime.UncaughtException);
         }
       }
 
       @Override
       public V assuming() throws Throwable {
         if (this.cause() instanceof Throwable t) {
-          throw (t instanceof Exceptable x && x.is(Error.UncaughtException)) ?
+          throw (t instanceof Exceptable x && x.is(Runtime.UncaughtException)) ?
             t :
-            Error.UncaughtException.throwable(t);
+            Runtime.UncaughtException.throwable(t);
         }
         throw this.signal().throwable();
       }
@@ -216,7 +216,7 @@ public class Try {
 
     /** Factory: builds a failure Result from the given Signal and cause. */
     public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Throwable cause) {
-      return new Failure<>(signal, new Error.Context(cause, null), cause);
+      return new Failure<>(signal, null, cause);
     }
 
     /** Factory: builds a success Result from the given return value. */

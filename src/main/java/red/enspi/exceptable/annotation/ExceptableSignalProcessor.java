@@ -86,6 +86,10 @@ public class ExceptableSignalProcessor extends AbstractProcessor {
           String.format("Generating Exceptable for %s...", element.getSimpleName()),
           element);
         var packageName = this.findPackage(element);
+        var exceptablePackageName = annotation.exceptablePackageName();
+        if (exceptablePackageName == null) {
+          exceptablePackageName = packageName;
+        }
         var signalClassname = element.getSimpleName().toString();
         var exceptableClassname = signalClassname + "Exception";
         var subs = new HashMap<String, String>();
