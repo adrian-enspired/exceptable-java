@@ -17,9 +17,9 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.exception.IllegalArgumentException;
+import red.enspi.exceptable.exception.InterruptedException;
 
-/** Indicates that a method has been passed an illegal or inappropriate argument. */
-public enum IllegalArgument implements Signal<IllegalArgumentException> {
+/** A thread not marked as interrupted was interrupted while it is waiting, sleeping, or otherwise occupied. */
+public enum Interrupted implements Signal<InterruptedException> {
   UncaughtException, UnknownError;
 }

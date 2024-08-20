@@ -17,9 +17,9 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.exception.IllegalArgumentException;
+import red.enspi.exceptable.exception.NoSuchMethodException;
 
-/** Indicates that a method has been passed an illegal or inappropriate argument. */
-public enum IllegalArgument implements Signal<IllegalArgumentException> {
+/** Indicates a particular method cannot be found. */
+public enum NoSuchMethod implements Signal<NoSuchMethodException> {
   UncaughtException, UnknownError;
 }

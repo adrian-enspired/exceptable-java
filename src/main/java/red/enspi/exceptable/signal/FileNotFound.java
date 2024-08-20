@@ -17,9 +17,9 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.exception.IllegalArgumentException;
+import red.enspi.exceptable.exception.FileNotFoundException;
 
-/** Indicates that a method has been passed an illegal or inappropriate argument. */
-public enum IllegalArgument implements Signal<IllegalArgumentException> {
+/** Indicates an attempt to access a file that does not exist. */
+public enum FileNotFound implements Signal<FileNotFoundException> {
   UncaughtException, UnknownError;
 }

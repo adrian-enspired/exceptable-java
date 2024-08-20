@@ -27,4 +27,6 @@ public @interface ExceptableSignal {
 
   String extendsFrom() default "red.enspi.exceptable.Exception";
   String exceptableInterface() default "red.enspi.exceptable.Exceptable";
+  String packageName();
+  String exceptablePackageName();
 }

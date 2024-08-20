@@ -17,9 +17,9 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.exception.IllegalArgumentException;
+import red.enspi.exceptable.exception.UnsupportedOperationException;
 
-/** Indicates that a method has been passed an illegal or inappropriate argument. */
-public enum IllegalArgument implements Signal<IllegalArgumentException> {
+/** Indicates that the requested operation is not supported. */
+public enum UnsupportedOperation implements Signal<UnsupportedOperationException> {
   UncaughtException, UnknownError;
 }

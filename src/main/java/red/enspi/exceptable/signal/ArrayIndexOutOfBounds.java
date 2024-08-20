@@ -17,9 +17,9 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.exception.IllegalArgumentException;
+import red.enspi.exceptable.exception.ArrayIndexOutOfBoundsException;
 
-/** Indicates that a method has been passed an illegal or inappropriate argument. */
-public enum IllegalArgument implements Signal<IllegalArgumentException> {
+/** Indicates that an array has been accessed with an illegal index. */
+public enum ArrayIndexOutOfBounds implements Signal<ArrayIndexOutOfBoundsException> {
   UncaughtException, UnknownError;
 }
