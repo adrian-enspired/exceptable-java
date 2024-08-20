@@ -18,30 +18,33 @@ package red.enspi.exceptable;
 
 import java.lang.Class;
 import java.lang.Throwable;
-import java.util.function.Supplier;
 
 import red.enspi.exceptable.Exceptable.Signal;
 import red.enspi.exceptable.Exceptable.Signal.Context;
+import red.enspi.exceptable.exception.RuntimeException;
 import red.enspi.exceptable.signal.Runtime;
 
 /** Utility methods for various error-handling strategies. */
 public class Try {
+
+  public interface ValueSupplier<V> { V invoke() throws Throwable; }
+  public interface ResultSupplier<V, S extends Signal<?>> { Result<V, S> invoke(); }
+
+  public static <V, S extends Signal<?>> V assume(ResultSupplier<V, S> callback) throws RuntimeException {
+    return callback.invoke().assume();
+  }
 
   /**
    * Invokes a callback, returning a Result with its value.
    *
    * <p> If the callback throws any of the given Exception types,
    *  they are returned in the Failure Result as the cause of the given Signal.
-   * The exact type is checked first, then parent types if no match is found.
    * Throws Runtime.UncaughtException if any other Exception type is thrown.
    */
-  public static <T, S extends Signal<?>> Result<T, S> collect(
-    Supplier<T> callback,
-    S ifCaught,
-    Class<?>... throwables
-  ) throws Throwable {
+  public static <V, S extends Signal<?>>
+  Result<V, S> collect(ValueSupplier<V> callback, S ifCaught, Class<?>... throwables) throws RuntimeException {
     try {
-      return Result.success(callback.get());
+      return Result.success(callback.invoke());
     } catch (Throwable t) {
       Class<?> tc = t.getClass();
       for (Class<?> c : throwables) {
@@ -49,32 +52,48 @@ public class Try {
           return Result.failure(ifCaught, t);
         }
       }
-      for (Class<?> c : throwables) {
-        if (c.isAssignableFrom(tc)) {
-          return Result.failure(ifCaught, t);
-        }
-      }
       throw Runtime.UncaughtException.throwable(t);
     }
   }
 
-  public static <T, S extends Signal<?>> Result<T, S> collect(
-    Supplier<T> callback,
-    S ifCaught,
-    Signal<?>... signals
-  ) throws Throwable {
+  public static <V, S extends Signal<?>>
+  Result<V, S> collect(ValueSupplier<V> callback, S ifCaught, Signal<?>... signals) throws RuntimeException {
     try {
-      return Result.success(callback.get());
+      return Result.success(callback.invoke());
     } catch (Throwable t) {
-      Throwable tx = Runtime.UncaughtException.throwable(t);
-      if (tx instanceof Exceptable x) {
-        for (Signal<?> s : signals) {
-          if (x.has(s)) {
-            return Result.failure(ifCaught, t);
-          }
+      var rx = (RuntimeException) Runtime.UncaughtException.throwable(t);
+      for (Signal<?> s : signals) {
+        if (rx.has(s)) {
+          return Result.failure(ifCaught, t);
         }
       }
-      throw tx;
+      throw rx;
+    }
+  }
+
+  public static <V, S extends Signal<?>>
+  Result<V, S> collect(ResultSupplier<V, S> callback, S ifCaught, Signal<?>... signals) throws RuntimeException {
+    try {
+      return switch (callback.invoke()) {
+        case Result.Success<V, S> success -> success;
+        case Result.Failure<V, S> failure -> {
+          var signal = failure.signal();
+          for (Signal<?> s : signals) {
+            if (signal.equals(s)) {
+              yield Result.failure(ifCaught);
+            }
+          }
+          yield failure;
+        }
+      };
+    } catch (Throwable t) {
+      var rx = (RuntimeException) Runtime.UncaughtException.throwable(t);
+      for (Signal<?> s : signals) {
+        if (rx.has(s)) {
+          return Result.failure(ifCaught, t);
+        }
+      }
+      throw rx;
     }
   }
 
@@ -84,9 +103,9 @@ public class Try {
    * If the callback throws any of the given Exception types, they are caught and `null` is returned.
    * Throws Runtime.UncaughtException if any other Exception type is thrown.
    */
-  public static <T> T ignore(Supplier<T> callback, Class<?>... throwables) throws Throwable {
+  public static <V> V ignore(ValueSupplier<V> callback, Class<?>... throwables) throws RuntimeException {
     try {
-      return callback.get();
+      return callback.invoke();
     } catch (Throwable t) {
       Class<?> tc = t.getClass();
       for (Class<?> c : throwables) {
@@ -98,35 +117,58 @@ public class Try {
     }
   }
 
-  public static <T> T ignore(Supplier<T> callback, Signal<?>... signals) throws Throwable {
+  public static <V> V ignore(ValueSupplier<V> callback, Signal<?>... signals) throws RuntimeException {
     try {
-      return callback.get();
+      return callback.invoke();
     } catch (Throwable t) {
-      Throwable tx = Runtime.UncaughtException.throwable(t);
-      if (tx instanceof Exceptable x) {
-        for (Signal<?> s : signals) {
-          if (x.has(s)) {
-            return null;
-          }
+      var rx = (RuntimeException) Runtime.UncaughtException.throwable(t);
+      for (Signal<?> s : signals) {
+        if (rx.has(s)) {
+          return null;
         }
       }
-      throw tx;
+      throw rx;
+    }
+  }
+
+  public static <V, S extends Signal<?>>
+  V ignore(ResultSupplier<V, S> callback, Signal<?>... signals) throws RuntimeException {
+    try {
+      return switch (callback.invoke()) {
+        case Result.Success<V, S> success -> success.value();
+        case Result.Failure<V, S> failure -> {
+          var signal = failure.signal();
+          for (Signal<?> s : signals) {
+            if (signal.equals(s)) {
+              yield null;
+            }
+          }
+          throw (RuntimeException) Runtime.UnknownError.throwable();
+        }
+      };
+    } catch (Throwable t) {
+      var rx = (RuntimeException) Runtime.UncaughtException.throwable(t);
+      for (Signal<?> s : signals) {
+        if (rx.has(s)) {
+          return null;
+        }
+      }
+      throw rx;
     }
   }
 
   /** Invokes a callback, wrapping the return value (or any thrown exception) in a Result object. */
-  public static <V, S extends Signal<?>> Result<V, S> result(Supplier<V> callback) {
+  public static <V, S extends Signal<?>> Result<V, S> result(ValueSupplier<V> callback) {
     try {
-      return Result.success(callback.get());
+      return Result.success(callback.invoke());
     } catch (Throwable t) {
       return Result.failure(t);
     }
   }
 
-  public interface ResultSupplier<V, S extends Signal<?>> { Result<V, S> get(); }
   public static <V, S extends Signal<?>> Result<V, S> result(ResultSupplier<V, S> callback) {
     try {
-      return callback.get();
+      return callback.invoke();
     } catch (Throwable t) {
       return Result.failure(t);
     }
@@ -172,7 +214,7 @@ public class Try {
     record Success<V, S extends Signal<?>>(V value) implements Result<V, S> {
 
       @Override
-      public V assuming() {
+      public V assume() {
         return this.value();
       }
     }
@@ -189,13 +231,11 @@ public class Try {
       }
 
       @Override
-      public V assuming() throws Throwable {
-        if (this.cause() instanceof Throwable t) {
-          throw (t instanceof Exceptable x && x.is(Runtime.UncaughtException)) ?
-            t :
-            Runtime.UncaughtException.throwable(t);
-        }
-        throw this.signal().throwable();
+      public V assume() throws RuntimeException {
+        var cause = this.cause();
+        throw (cause instanceof RuntimeException rx && rx.is(Runtime.UncaughtException)) ?
+          rx :
+          Runtime.UncaughtException.throwable(cause);
       }
     }
 
@@ -225,6 +265,6 @@ public class Try {
     }
 
     /** Assumes the Result is successful and tries to return its value. */
-    V assuming() throws Throwable;
+    V assume() throws RuntimeException;
   }
 }

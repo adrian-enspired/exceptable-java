@@ -166,14 +166,14 @@ public class TryTest {
   void assumingSuccess() {
     Result<String, Trier.Signal> actual = new Trier().getResult();
     this.successResult_assertions(actual);
-    assertDoesNotThrow(() -> assertEquals("foo!", actual.assuming()));
+    assertDoesNotThrow(() -> assertEquals("foo!", actual.assume()));
   }
 
   @Test
   void assumingFailure() {
     Result<String, Trier.Signal> actual = new Trier().getSignal();
     this.failureResult_assertions(actual);
-    assertThrows(RuntimeException.class, () -> assertEquals("foo!", actual.assuming()));
+    assertThrows(RuntimeException.class, () -> assertEquals("foo!", actual.assume()));
   }
 
   private static class Trier {
