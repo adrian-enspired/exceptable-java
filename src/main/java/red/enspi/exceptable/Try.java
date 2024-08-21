@@ -27,8 +27,7 @@ import red.enspi.exceptable.signal.Runtime;
 /** Utility methods for various error-handling strategies. */
 public class Try {
 
-  public interface ValueSupplier<V> { V invoke() throws Throwable; }
-  public interface ResultSupplier<V, S extends Signal<?>> { Result<V, S> invoke(); }
+  public static WhenIgnored whenIgnored = null;
 
   public static <V, S extends Signal<?>> V assume(ResultSupplier<V, S> callback) throws RuntimeException {
     return callback.invoke().assume();
@@ -110,6 +109,9 @@ public class Try {
       Class<?> tc = t.getClass();
       for (Class<?> c : throwables) {
         if (c.equals(tc)) {
+          if (Try.whenIgnored != null) {
+            Try.whenIgnored.invoke(t);
+          }
           return null;
         }
       }
@@ -124,6 +126,9 @@ public class Try {
       var rx = (RuntimeException) Runtime.UncaughtException.throwable(t);
       for (Signal<?> s : signals) {
         if (rx.has(s)) {
+          if (Try.whenIgnored != null) {
+            Try.whenIgnored.invoke(t);
+          }
           return null;
         }
       }
@@ -140,16 +145,22 @@ public class Try {
           var signal = failure.signal();
           for (Signal<?> s : signals) {
             if (signal.equals(s)) {
+              if (Try.whenIgnored != null) {
+                Try.whenIgnored.invoke(failure.cause());
+              }
               yield null;
             }
           }
-          throw (RuntimeException) Runtime.UnknownError.throwable();
+          throw (RuntimeException) Runtime.UnknownError.throwable(failure.cause());
         }
       };
     } catch (Throwable t) {
       var rx = (RuntimeException) Runtime.UncaughtException.throwable(t);
       for (Signal<?> s : signals) {
         if (rx.has(s)) {
+          if (Try.whenIgnored != null) {
+            Try.whenIgnored.invoke(t);
+          }
           return null;
         }
       }
@@ -267,4 +278,10 @@ public class Try {
     /** Assumes the Result is successful and tries to return its value. */
     V assume() throws RuntimeException;
   }
+
+  public interface ValueSupplier<V> { V invoke() throws Throwable; }
+
+  public interface ResultSupplier<V, S extends Signal<?>> { Result<V, S> invoke(); }
+
+  public interface WhenIgnored { void invoke(Throwable t); }
 }

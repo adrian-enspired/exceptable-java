@@ -96,6 +96,44 @@ public class TryTest {
   }
 
   @Test
+  void ignoredResultSignals() {
+    assertDoesNotThrow(() -> {
+      String actual = Try.ignore(() -> new Trier().getSignal(), Trier.Signal.Six);
+      assertTrue(actual == null);
+    });
+  }
+
+  @Test
+  void whenIgnoredExceptions() {
+    try {
+      assertDoesNotThrow(() -> {
+        Throwable[] log = new Throwable[1];
+        Try.whenIgnored = (t) -> log[0] = t;
+        String actual = Try.ignore(() -> new Trier().throwHappy(), RuntimeException.class);
+        assertTrue(actual == null);
+        assertTrue(log[0] instanceof RuntimeException);
+      });
+    } finally {
+      Try.whenIgnored = null;
+    }
+  }
+
+  @Test
+  void whenIgnoredSignals() {
+    try {
+      assertDoesNotThrow(() -> {
+        Throwable[] log = new Throwable[1];
+        Try.whenIgnored = (t) -> log[0] = t;
+        String actual = Try.ignore(() -> new Trier().throwHappy(), Trier.Signal.Six);
+        assertTrue(actual == null);
+        assertTrue(log[0] instanceof RuntimeException);
+      });
+    } finally {
+      Try.whenIgnored = null;
+    }
+  }
+
+  @Test
   void unignoredExceptions() {
     assertThrows(
       Exception.class,
