@@ -22,7 +22,22 @@ import java.lang.Throwable;
 import red.enspi.exceptable.Exceptable.Signal;
 import red.enspi.exceptable.Exceptable.Signal.Context;
 import red.enspi.exceptable.exception.RuntimeException;
+import red.enspi.exceptable.signal.ArrayIndexOutOfBounds;
+import red.enspi.exceptable.signal.Checked;
+import red.enspi.exceptable.signal.ClassCast;
+import red.enspi.exceptable.signal.FileNotFound;
+import red.enspi.exceptable.signal.IO;
+import red.enspi.exceptable.signal.IllegalArgument;
+import red.enspi.exceptable.signal.IllegalState;
+import red.enspi.exceptable.signal.IndexOutOfBounds;
+import red.enspi.exceptable.signal.Interrupted;
+import red.enspi.exceptable.signal.NoSuchElement;
+import red.enspi.exceptable.signal.NoSuchMethod;
+import red.enspi.exceptable.signal.NullPointer;
 import red.enspi.exceptable.signal.Runtime;
+import red.enspi.exceptable.signal.Socket;
+import red.enspi.exceptable.signal.UnknownHost;
+import red.enspi.exceptable.signal.UnsupportedOperation;
 
 /** Utility methods for various error-handling strategies. */
 public class Try {
@@ -226,7 +241,7 @@ public class Try {
       public Failure {
         // fill an empty error from a given exception
         if (signal == null && cause != null) {
-          signal = (S) ((cause instanceof Exceptable x) ? x.signal() : Runtime.UncaughtException);
+          signal = (S) ((cause instanceof Exceptable x) ? x.signal() : this.signalFor(cause));
         }
       }
 
@@ -236,6 +251,29 @@ public class Try {
         throw (cause instanceof RuntimeException rx && rx.is(Runtime.UncaughtException)) ?
           rx :
           Runtime.UncaughtException.throwable(cause);
+      }
+
+      private Signal<?> signalFor(Throwable throwable) {
+        return (throwable instanceof Exceptable x) ?
+          x.signal() :
+          switch(throwable) {
+            case java.lang.IllegalArgumentException t -> IllegalArgument.UncaughtException;
+            case java.lang.IllegalStateException t -> IllegalState.UncaughtException;
+            case java.lang.UnsupportedOperationException t -> UnsupportedOperation.UncaughtException;
+            case java.lang.NullPointerException t -> NullPointer.UncaughtException;
+            case java.util.NoSuchElementException t -> NoSuchElement.UncaughtException;
+            case java.io.FileNotFoundException t -> FileNotFound.UncaughtException;
+            case java.lang.InterruptedException t -> Interrupted.UncaughtException;
+            case java.lang.ArrayIndexOutOfBoundsException t -> ArrayIndexOutOfBounds.UncaughtException;
+            case java.lang.ClassCastException t -> ClassCast.UncaughtException;
+            case java.lang.NoSuchMethodException t -> NoSuchMethod.UncaughtException;
+            case java.net.UnknownHostException t -> UnknownHost.UncaughtException;
+            case java.net.SocketException t -> Socket.UncaughtException;
+            case java.io.IOException t -> IO.UncaughtException;
+            case java.lang.IndexOutOfBoundsException t -> IndexOutOfBounds.UncaughtException;
+            case java.lang.RuntimeException t -> Runtime.UncaughtException;
+            default -> Checked.UncaughtException;
+          };
       }
     }
 

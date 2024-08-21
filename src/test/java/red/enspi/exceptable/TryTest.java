@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import red.enspi.exceptable.signal.Checked;
+import red.enspi.exceptable.signal.IO;
+import red.enspi.exceptable.exception.IOException;
 import red.enspi.exceptable.exception.IllegalArgumentException;
 import red.enspi.exceptable.exception.RuntimeException;
 import red.enspi.exceptable.Try.Result;
@@ -256,7 +258,13 @@ public class TryTest {
   void assumingFailure() {
     Result<String, Trier.Signal> actual = new Trier().getSignal();
     this.failureResult_assertions(actual);
-    assertThrows(RuntimeException.class, () -> assertEquals("foo!", actual.assume()));
+    assertThrows(RuntimeException.class, () -> actual.assume());
+  }
+
+  @Test
+  void resultDefaultSignals() {
+    assertEquals(IO.UnknownError, new Result.Failure<>(null, null, new IOException()).signal());
+    assertEquals(IO.UncaughtException, new Result.Failure<>(null, null, new java.io.IOException()).signal());
   }
 
   private static class Trier {
