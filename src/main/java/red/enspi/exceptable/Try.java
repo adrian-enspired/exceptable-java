@@ -41,58 +41,47 @@ public class Try {
    * Throws Runtime.UncaughtException if any other Exception type is thrown.
    */
   public static <V, S extends Signal<?>>
-  Result<V, S> collect(ValueSupplier<V> callback, S ifCaught, Class<?>... throwables) throws RuntimeException {
+  Result<V, S> collect(ValueSupplier<V> callback, SignalMap... signalMaps) throws RuntimeException {
     try {
       return Result.success(callback.invoke());
     } catch (Throwable t) {
-      Class<?> tc = t.getClass();
-      for (Class<?> c : throwables) {
-        if (c.equals(tc)) {
-          return Result.failure(ifCaught, t);
-        }
-      }
-      throw Runtime.UncaughtException.throwable(t);
+      return SignalMap.evaluate(t, signalMaps);
     }
+  }
+
+  public static <V, S extends Signal<?>>
+  Result<V, S> collect(ValueSupplier<V> callback, S ifCaught, Class<?>... throwables) throws RuntimeException {
+    return Try.collect(callback, new ThrowablesMap(ifCaught, throwables));
   }
 
   public static <V, S extends Signal<?>>
   Result<V, S> collect(ValueSupplier<V> callback, S ifCaught, Signal<?>... signals) throws RuntimeException {
-    try {
-      return Result.success(callback.invoke());
-    } catch (Throwable t) {
-      var rx = (RuntimeException) Runtime.UncaughtException.throwable(t);
-      for (Signal<?> s : signals) {
-        if (rx.has(s)) {
-          return Result.failure(ifCaught, t);
-        }
-      }
-      throw rx;
-    }
+    return Try.collect(callback, new SignalsMap(ifCaught, signals));
   }
 
-  public static <V, S extends Signal<?>>
-  Result<V, S> collect(ResultSupplier<V, S> callback, S ifCaught, Signal<?>... signals) throws RuntimeException {
+  public static <V, S extends Signal<?>, S2 extends Signal<?>>
+  Result<V, S> collect(ResultSupplier<V, S2> callback, S ifCaught, Signal<?>... signals) throws RuntimeException {
+    return Try.collect(callback, new SignalsMap(ifCaught, signals));
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <V, S extends Signal<?>, S2 extends Signal<?>>
+  Result<V, S> collect(ResultSupplier<V, S2> callback, SignalMap... signalMaps) throws RuntimeException {
     try {
       return switch (callback.invoke()) {
-        case Result.Success<V, S> success -> success;
-        case Result.Failure<V, S> failure -> {
-          var signal = failure.signal();
-          for (Signal<?> s : signals) {
-            if (signal.equals(s)) {
-              yield Result.failure(ifCaught);
+        case Result.Success<V, ?> success -> (Result<V, S>) success;
+        case Result.Failure<V, S2> failure -> {
+          S2 actual = failure.signal();
+          for (var signalMap : signalMaps) {
+            if (signalMap instanceof SignalsMap signalsMap && signalsMap.isMapped(actual)) {
+              yield Result.failure((S) signalsMap.ifCaught());
             }
           }
-          yield failure;
+          throw Runtime.UnknownError.throwable(actual.throwable());
         }
       };
     } catch (Throwable t) {
-      var rx = (RuntimeException) Runtime.UncaughtException.throwable(t);
-      for (Signal<?> s : signals) {
-        if (rx.has(s)) {
-          return Result.failure(ifCaught, t);
-        }
-      }
-      throw rx;
+      return SignalMap.evaluate(t, signalMaps);
     }
   }
 
@@ -279,9 +268,64 @@ public class Try {
     V assume() throws RuntimeException;
   }
 
+  public interface ResultSupplier<V, S extends Signal<?>> { Result<V, S> invoke(); }
+
   public interface ValueSupplier<V> { V invoke() throws Throwable; }
 
-  public interface ResultSupplier<V, S extends Signal<?>> { Result<V, S> invoke(); }
+  public sealed interface SignalMap permits SignalsMap, ThrowablesMap {
+
+    @SuppressWarnings("unchecked")
+    static <V, S extends Signal<?>> Result<V, S> evaluate(Throwable actual, SignalMap... signalMaps) {
+      for (var signalMap : signalMaps) {
+        if (signalMap.isMapped(actual)) {
+          return Result.failure((S) signalMap.ifCaught(), actual);
+        }
+      }
+      throw Runtime.UncaughtException.throwable(actual);
+    }
+
+    Signal<?> ifCaught();
+    boolean isMapped(Throwable actual);
+  }
+
+  record SignalsMap(Signal<?> ifCaught, Signal<?>... signals) implements SignalMap {
+
+    @Override
+    public boolean isMapped(Throwable actual) {
+      Exceptable actualX = (actual instanceof Exceptable x) ?
+        x :
+        (RuntimeException) Runtime.UncaughtException.throwable(actual);
+      for (var s : this.signals()) {
+        if (actualX.has(s)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public boolean isMapped(Signal<?> actual) {
+      for (var s : this.signals()) {
+        if (actual.equals(s)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+
+  record ThrowablesMap(Signal<?> ifCaught, Class<?>... throwables) implements SignalMap {
+
+    @Override
+    public boolean isMapped(Throwable actual) {
+      Class<?> actualClass = actual.getClass();
+      for (var t : this.throwables()) {
+        if (actualClass.equals(t)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
 
   public interface WhenIgnored { void invoke(Throwable t); }
 }

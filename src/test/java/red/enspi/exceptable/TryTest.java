@@ -27,6 +27,8 @@ import red.enspi.exceptable.signal.Checked;
 import red.enspi.exceptable.exception.IllegalArgumentException;
 import red.enspi.exceptable.exception.RuntimeException;
 import red.enspi.exceptable.Try.Result;
+import red.enspi.exceptable.Try.SignalsMap;
+import red.enspi.exceptable.Try.ThrowablesMap;
 
 /** Tests for Results and Try utilities. */
 public class TryTest {
@@ -41,9 +43,27 @@ public class TryTest {
   }
 
   @Test
+  void collectedExceptionMaps() {
+    assertDoesNotThrow(() -> {
+      Result<String, Checked> actual = Try.collect(
+        () -> new Trier().throwHappy(), new ThrowablesMap(Checked.UncaughtException, RuntimeException.class));
+      this.throwHappyResult_assertions(actual);
+    });
+  }
+
+  @Test
+  void collectedSignalMaps() {
+    assertDoesNotThrow(() -> {
+      Result<String, Checked> actual = Try.collect(
+        () -> new Trier().getSignal(), new SignalsMap(Checked.UncaughtException, Trier.Signal.Six));
+      this.getSignalResult_assertions(actual);
+    });
+  }
+
+  @Test
   void uncollectedExceptions() {
     assertThrows(
-      Exception.class,
+      RuntimeException.class,
       () -> Try.collect(() -> new Trier().throwHappy(), Checked.UncaughtException, IllegalArgumentException.class));
   }
 
@@ -59,9 +79,25 @@ public class TryTest {
   @Test
   void uncollectedSignals() {
     assertThrows(
-      Exception.class,
+      RuntimeException.class,
       () -> Try.collect(
         () -> new Trier().throwHappy(), Checked.UncaughtException, Checked.UnknownError));
+  }
+
+  @Test
+  void collectedResultSignals() {
+    assertDoesNotThrow(() -> {
+      Result<String, Checked> actual = Try.collect(
+        () -> new Trier().getSignal(), Checked.UncaughtException, Trier.Signal.Six);
+      this.getSignalResult_assertions(actual);
+    });
+  }
+
+  @Test
+  void uncollectedResultSignals() {
+    assertThrows(
+      RuntimeException.class,
+      () -> Try.collect(() -> new Trier().getSignal(), Checked.UncaughtException, Checked.UnknownError));
   }
 
   private void throwHappyResult_assertions(Result<String, Checked> actual) {
@@ -73,6 +109,15 @@ public class TryTest {
         assertTrue(actualFailure.cause() instanceof RuntimeException);
       }
       assertTrue(actualFailure.signal().equals(Checked.UncaughtException));
+    } else {
+      // if the above failed, we'll hit this and fail
+      assertTrue(actual instanceof Result.Failure<String, Checked>);
+    }
+  }
+
+  private void getSignalResult_assertions(Result<String, Checked> actual) {
+    if (actual instanceof Result.Failure actualFailure) {
+      assertEquals(Checked.UncaughtException, actualFailure.signal());
     } else {
       // if the above failed, we'll hit this and fail
       assertTrue(actual instanceof Result.Failure<String, Checked>);
@@ -136,14 +181,14 @@ public class TryTest {
   @Test
   void unignoredExceptions() {
     assertThrows(
-      Exception.class,
+      RuntimeException.class,
       () -> Try.ignore(() -> new Trier().throwHappy(), Exception.class));
   }
 
   @Test
   void unignoredSignals() {
     assertThrows(
-      Exception.class,
+      RuntimeException.class,
       () -> Try.ignore(() -> new Trier().throwHappy(), Checked.UnknownError));
   }
 
