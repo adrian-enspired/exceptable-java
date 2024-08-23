@@ -253,6 +253,15 @@ public class Try {
           Runtime.UncaughtException.throwable(cause);
       }
 
+      /** A human-readable message describing this failure. */
+      public String message() {
+        if (this.context() instanceof Context context) {
+          Contexceptablized.stage(context, this.cause());
+          return this.context().message();
+        }
+        return this.signal().message();
+      }
+
       private Signal<?> signalFor(Throwable throwable) {
         return (throwable instanceof Exceptable x) ?
           x.signal() :
