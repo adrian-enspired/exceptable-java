@@ -278,23 +278,28 @@ public class Try {
     }
 
     /** Factory: builds a failure Result. */
+    public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Context context, Throwable cause) {
+      return new Failure<>(signal, context, cause);
+    }
+
     public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Context context) {
       return new Failure<>(signal, context, null);
     }
-
-    /** Factory: builds a failure Result from the given Signal. */
+    
     public static <V, S extends Signal<?>> Result<V, S> failure(S signal) {
       return new Failure<>(signal, null, null);
     }
 
-    /** Factory: builds a failure Result from the given Throwable. */
-    public static <V, S extends Signal<?>> Result<V, S> failure(Throwable cause) {
-      return new Failure<>(null, null, cause);
-    }
-
-    /** Factory: builds a failure Result from the given Signal and cause. */
     public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Throwable cause) {
       return new Failure<>(signal, null, cause);
+    }
+
+    public static <V, S extends Signal<?>> Result<V, S> failure(Context context, Throwable cause) {
+      return new Failure<>(null, context, cause);
+    }
+
+    public static <V, S extends Signal<?>> Result<V, S> failure(Throwable cause) {
+      return new Failure<>(null, null, cause);
     }
 
     /** Factory: builds a success Result from the given return value. */
