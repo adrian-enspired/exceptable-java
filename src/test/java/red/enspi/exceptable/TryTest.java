@@ -111,6 +111,7 @@ public class TryTest {
         assertTrue(actualFailure.cause() instanceof RuntimeException);
       }
       assertTrue(actualFailure.signal().equals(Checked.UncaughtException));
+      assertEquals("red.enspi.exceptable.signal.Checked.UncaughtException", actualFailure.message());
     } else {
       // if the above failed, we'll hit this and fail
       assertTrue(actual instanceof Result.Failure<String, Checked>);
@@ -120,6 +121,7 @@ public class TryTest {
   private void getSignalResult_assertions(Result<String, Checked> actual) {
     if (actual instanceof Result.Failure actualFailure) {
       assertEquals(Checked.UncaughtException, actualFailure.signal());
+      assertEquals("red.enspi.exceptable.signal.Checked.UncaughtException", actualFailure.message());
     } else {
       // if the above failed, we'll hit this and fail
       assertTrue(actual instanceof Result.Failure<String, Checked>);
@@ -224,6 +226,7 @@ public class TryTest {
   private void failureResult_assertions(Result<String, Trier.Signal> actual) {
     if (actual instanceof Result.Failure<String, Trier.Signal> actualFailure) {
       assertTrue(actualFailure.signal().equals(Trier.Signal.Six));
+      assertEquals("He's in the hotel!", actualFailure.message());
     } else {
       // if the above failed, we'll hit this and fail
       assertTrue(actual instanceof Result.Failure<String, Trier.Signal>);
@@ -241,6 +244,7 @@ public class TryTest {
         assertTrue(actualFailure.cause() instanceof RuntimeException);
       }
       assertTrue(actualFailure.signal().equals(Trier.Signal.Six));
+      assertEquals("He's in the hotel!", actualFailure.message());
     } else {
       // if the above failed, we'll hit this and fail
       assertTrue(actual instanceof Result.Failure<String, Trier.Signal>);
