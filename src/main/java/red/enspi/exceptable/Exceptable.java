@@ -16,11 +16,9 @@
  */
 package red.enspi.exceptable;
 
-import java.lang.Class;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.RecordComponent;
-import java.lang.Throwable;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -115,6 +113,9 @@ public interface Exceptable {
     @SuppressWarnings("unchecked")
     default T throwable(Context context, Throwable cause) {
       try {
+        if (context != null && cause != null) {
+          Contexceptablized.stage(context, cause);
+        }
         Class<T> type = this.throwableType();
         return Exceptable.class.isAssignableFrom(type) ?
           type.getDeclaredConstructor(Signal.class, Context.class, Throwable.class)
@@ -191,19 +192,7 @@ public interface Exceptable {
      */
     interface Context {
 
-      /**
-       * Formats the given template based on contextual information.
-       *
-       * <p> Supports string replacement of the following context types:
-       * <ul>
-       * <li> primitives, via String.valueOf()
-       * <li> objects, via .toString()
-       * <li> arrays of primitives or objects, via above strategies, wrapped in brackets and joined by commas.
-       * </ul>
-       *
-       * It is the implementation's responsibility to ensure that any context referenced in a message template
-       *  has a meaningful string representation.
-       */
+      /** Provides a contextualized error message. */
       default String message() {
         if (this.template() instanceof String template) {
           if (template.contains("{")) {
@@ -227,6 +216,9 @@ public interface Exceptable {
                 // ignore; move on to next
               }
             }
+            if (template.contains("{cause}") && Contexceptablized.cause(this) instanceof Throwable cause) {
+              template = template.replace("{cause}", cause.toString());
+            }
             if (! template.contains("{")) {
               return template;
             }
@@ -244,7 +236,9 @@ public interface Exceptable {
        * <ul>
        * <li> primitives, via {@code String.valueOf(primitive)}
        * <li> objects, via {@code object.toString()}
-       * <li> arrays of primitives or objects, via above strategies, wrapped in brackets and joined by commas.
+       * <li> arrays of primitives or objects, via above strategies, wrapped in brackets and joined by commas
+       * <li> the {@code cause} of the related Exceptable, 
+       *  if it was instantiated via {@code Signal.throwable()} and a cause was given.
        * </ul>
        *
        * It is the implementation's responsibility to ensure that any context referenced in a message template
@@ -260,5 +254,4 @@ public interface Exceptable {
   Throwable getCause();
   String getMessage();
   StackTraceElement[] getStackTrace();
-  String toString();
 }
