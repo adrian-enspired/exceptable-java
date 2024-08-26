@@ -140,11 +140,12 @@ public class TestSourceProcessor extends AbstractProcessor {
           packageName = this.findPackage(element);
         }
         String exceptableClassname = annotation.exceptableClass();
+        String exceptableTestSource = element.getSimpleName().toString();
         var subs = new HashMap<String, String>();
         subs.put("{package}", packageName);
         subs.put("{exceptableClassname}", exceptableClassname);
-        subs.put("{exceptableTestSource}", element.getSimpleName().toString());
-        subs.put("{sources_construct}", "construct_source");
+        subs.put("{exceptableTestSource}", exceptableTestSource);
+        subs.put("{sources_construct}",  packageName + "." + exceptableTestSource + "#construct_source");
         subs.put("{sources_SignalCode}", "SignalCode_source");
         subs.put("{sources_SignalMessage}", "SignalMessage_source");
         subs.put("{sources_SignalThrowable}", "construct_source");

@@ -294,7 +294,7 @@ public class Try {
     public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Context context) {
       return new Failure<>(signal, context, null);
     }
-    
+
     public static <V, S extends Signal<?>> Result<V, S> failure(S signal) {
       return new Failure<>(signal, null, null);
     }
@@ -309,6 +309,13 @@ public class Try {
 
     public static <V, S extends Signal<?>> Result<V, S> failure(Throwable cause) {
       return new Failure<>(null, null, cause);
+    }
+
+    public static <T, V, S extends Signal<?>, E extends Signal<?>> Result<V, S> failure(S signal, Result<T, E> result) {
+      return switch (result) {
+        case Result.Failure<T, E> failure -> new Failure<>(signal, failure.context(), failure.cause());
+        case Result.Success<T, E> success -> new Failure<>(signal, null, null);
+      };
     }
 
     /** Factory: builds a success Result from the given return value. */

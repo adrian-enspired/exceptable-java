@@ -1,5 +1,9 @@
 _exceptable_ makes exceptions exceptional!
 
+## Exceptions
+
+Exceptable's basic Exception types extend from java's built-in Exceptions (e.g., `red.enspi.exceptable.signal.RuntimeException` extends from `java.lang.RuntimeException`), so code that isn't aware of Exceptables can still catch classes of exceptions in a sensible way. You can build your own custom types "from scratch," but it's generally best to extend from one of these "base" Exceptables.
+
 ## Signals
 
 What are "signals"?
@@ -9,10 +13,6 @@ _Exceptable_ uses enum values to define specific error cases. The advantage is t
 Signals can also define _context_ classes for any error case, which allows you to provide runtime information with more details about what went wrong - for example, classnames, inputs/arguments, and other stateful information that can help with handling the error.
 
 Each Signal is associated with a particular Exception type, and can construct an exception where needed.
-
-## Exceptions
-
-Exceptable's basic Exception types extend from java's built-in Exceptions (e.g., `red.enspi.exceptable.signal.RuntimeException` extends from `java.lang.RuntimeException`), so code that isn't aware of Exceptables can still catch classes of exceptions in a sensible way. You can build your own custom types "from scratch," but it's generally best to extend from one of these "base" Exceptables.
 
 ## Usage
 
@@ -39,8 +39,8 @@ The `Result` interface is sealed, meaning we know there will only ever be `Succe
 ```java
 Result<String, Error> result = Try.result(() -> new Your().trulyExceptableMethod("Billy"));
 switch (result) {
-  case Result.Success success -> System.out.println(success.value().toUpperCase() + "!");
-  case Result.Failure failure -> {
+  case Result.Success<String, ?> success -> System.out.println(success.value().toUpperCase() + "!");
+  case Result.Failure<?, Error> failure -> {
     // this will be IllegalArgument.WhoEvenAreYou
     Error signal = failure.signal();
     // this will always be null (since we didn't provide any context)
@@ -76,8 +76,8 @@ class Some {
 
 Result<String, Error> result = Try.result(() -> new Some().normalMethod("Billy"));
 switch (result) {
-  case Result.Success success -> System.out.println(success.value().toUpperCase() + "!");
-  case Result.Failure failure -> {
+  case Result.Success<String, ?> success -> System.out.println(success.value().toUpperCase() + "!");
+  case Result.Failure<?, Error> failure -> {
     // this will always be Error.UncaughtException
     Error signal = failure.signal();
     // this will always be null (since your.normalMethod() doesn't provide any context)
@@ -118,8 +118,8 @@ try {
     SomeError.Recoverable,
     IOException.class, RuntimeException.class);
   switch (result) {
-    case Result.Success success -> System.out.println(success.value());
-    case Result.Failure failure -> System.out.println("Try again later: " + failure.cause().getMessage());
+    case Result.Success<String, ?> success -> System.out.println(success.value());
+    case Result.Failure<?, Error> failure -> System.out.println("Try again later: " + failure.cause().getMessage());
   }
 } catch (Exception e) {
   System.out.println("This is not a recoverable error: " + e.cause().getMessage());
@@ -135,8 +135,8 @@ try {
     SomeError.Recoverable,
     Some.FragileError.IO, Some.FragileError.Runtime);
   switch (result) {
-    case Result.Success success -> System.out.println(success.value());
-    case Result.Failure failure -> System.out.println("Try again later: " + failure.signal());
+    case Result.Success<String, ?> success -> System.out.println(success.value());
+    case Result.Failure<?, Error> failure -> System.out.println("Try again later: " + failure.signal());
   }
 } catch (Exception e) {
   System.out.println("This is not a recoverable error: " + e.cause().getMessage());

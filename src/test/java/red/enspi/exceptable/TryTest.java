@@ -252,6 +252,24 @@ public class TryTest {
   }
 
   @Test
+  void failureResultFromResult() {
+    Result<String, Checked> actual = Result.failure(Checked.UnknownError, new Trier().getSignal());
+    if (actual instanceof Result.Failure<String, Checked> actualFailure) {
+      assertTrue(actualFailure.signal().equals(Checked.UnknownError));
+    } else {
+      // if the above failed, we'll hit this and fail
+      assertTrue(actual instanceof Result.Failure<String, Checked>);
+    }
+    Result<String, Checked> nextActual = Result.failure(Checked.UnknownError, new Trier().getResult());
+    if (nextActual instanceof Result.Failure<String, Checked> actualFailure) {
+      assertTrue(actualFailure.signal().equals(Checked.UnknownError));
+    } else {
+      // if the above failed, we'll hit this and fail
+      assertTrue(nextActual instanceof Result.Failure<String, Checked>);
+    }
+  }
+
+  @Test
   void assumingSuccess() {
     Result<String, Trier.Signal> actual = new Trier().getResult();
     this.successResult_assertions(actual);
