@@ -89,7 +89,7 @@ public class Try {
           S2 actual = failure.signal();
           for (var signalMap : signalMaps) {
             if (signalMap instanceof SignalsMap signalsMap && signalsMap.isMapped(actual)) {
-              yield Result.failure((S) signalsMap.ifCaught());
+              yield failure.as((S) signalsMap.ifCaught());
             }
           }
           throw Runtime.UnknownError.throwable(actual.throwable());
@@ -202,6 +202,8 @@ public class Try {
    * <li> {@code Result.failure(S, Context, Throwable)}
    * <li> {@code Result.failure(S, Context)}
    * <li> {@code Result.failure(S)}
+   * <li> {@code Result.failure(S, Throwable)}
+   * <li> {@code Result.failure(Context, Throwable)}
    * <li> {@code Result.failure(Throwable)}
    * </ul>
    *
@@ -243,6 +245,11 @@ public class Try {
         if (signal == null && cause != null) {
           signal = (S) ((cause instanceof Exceptable x) ? x.signal() : this.signalFor(cause));
         }
+      }
+
+      /** Builds a new Failure result from this one, using the provided Signal. */
+      public <S2 extends Signal<?>> Failure<V, S2> as(S2 signal) {
+        return new Failure<V, S2>(signal, this.context(), this.cause());
       }
 
       @Override
@@ -347,7 +354,7 @@ public class Try {
     boolean isMapped(Throwable actual);
   }
 
-  record SignalsMap(Signal<?> ifCaught, Signal<?>... signals) implements SignalMap {
+  public record SignalsMap(Signal<?> ifCaught, Signal<?>... signals) implements SignalMap {
 
     @Override
     public boolean isMapped(Throwable actual) {
@@ -372,7 +379,7 @@ public class Try {
     }
   }
 
-  record ThrowablesMap(Signal<?> ifCaught, Class<?>... throwables) implements SignalMap {
+  public record ThrowablesMap(Signal<?> ifCaught, Class<?>... throwables) implements SignalMap {
 
     @Override
     public boolean isMapped(Throwable actual) {

@@ -23,7 +23,7 @@ import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import red.enspi.exceptable.exception.CheckedException;
+import red.enspi.exceptable.exception.RuntimeException;
 import red.enspi.exceptable.signal.Runtime;
 
 /**
@@ -119,7 +119,7 @@ public interface Exceptable {
         signal = Runtime.UnknownError;
       }
       if (context == null) {
-        context = signal.defaultContext(cause);
+        context = signal._defaultContext(cause);
       }
     }
   }
@@ -128,7 +128,6 @@ public interface Exceptable {
   interface Signal<T extends Throwable> {
 
     /** Factory: builds an Exceptable from this case. */
-    @SuppressWarnings("unchecked")
     default T throwable(Context context, Throwable cause) {
       try {
         Exceptable._stage(context, cause);
@@ -140,7 +139,7 @@ public interface Exceptable {
             .newInstance(this.message(context), cause);
       } catch (Throwable t) {
         // problem building the intended Exceptable. fall back on using a basic Exceptable.
-        return (T) new CheckedException(this, context, cause);
+        throw Runtime.UncaughtException.throwable(t);
       }
     }
 
@@ -187,8 +186,24 @@ public interface Exceptable {
       return this.message(null);
     }
 
+    /** A default (empty) Context class that matches this Signal, if any available. */
     default Context _defaultContext(Throwable cause) {
-      //
+      var thisClass = this.getClass();
+      var signalName = this.name();
+      for (var nestedClass : thisClass.getDeclaredClasses()) {
+        if (Context.class.isAssignableFrom(nestedClass) && nestedClass.getSimpleName().toString().equals(signalName)) {
+          for (var constructor : nestedClass.getDeclaredConstructors()) {
+            try {
+              if (constructor.newInstance(new Object[constructor.getParameterCount()]) instanceof Context defaultContext) {
+                constructor.setAccessible(true);
+                Exceptable._stage(defaultContext, cause);
+                return defaultContext;
+              }
+            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {}
+          }
+        }
+      }
+      return null;
     }
 
     /** The Throwable+Exceptable class this Signal must use. */
@@ -266,6 +281,8 @@ public interface Exceptable {
        */
       default String _template() { return null; }
     }
+
+    String name();
   }
 
   // Throwable methods
