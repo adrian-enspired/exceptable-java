@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>red.enspi</groupId>
   <artifactId>exceptable</artifactId>
-  <version>1.0.9</version>
+  <version>1.0.10</version>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

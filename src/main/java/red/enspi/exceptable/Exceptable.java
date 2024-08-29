@@ -23,7 +23,7 @@ import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import red.enspi.exceptable.exception.CheckedException;
+import red.enspi.exceptable.signal.Runtime;
 
 /**
  * Making exceptions exceptional!
@@ -59,6 +59,12 @@ import red.enspi.exceptable.exception.CheckedException;
  * Abstract Tests are provided to verify correct implementation of your custom Exceptables.
  */
 public interface Exceptable {
+
+  public static void _stage(Signal.Context context, Throwable cause) {
+    if (context != null && cause != null) {
+      Contexceptablized.stage(context, cause);
+    }
+  }
 
   /** The previous Exception (if any) in the chain. */
   default Throwable cause() {
@@ -106,25 +112,35 @@ public interface Exceptable {
     return null;
   }
 
+  record ConstructArgs(Signal<?> signal, Signal.Context context, Throwable cause) {
+    public ConstructArgs {
+      if (signal == null) {
+        signal = Runtime.UnknownError;
+      }
+      if (context == null) {
+        context = signal._defaultContext();
+      }
+      Exceptable._stage(context, cause);
+    }
+
+    public String message() {
+      return this.signal().message(this.context());
+    }
+  }
+
   /** Specific error scenarios for this Exceptable. */
   interface Signal<T extends Throwable> {
 
     /** Factory: builds an Exceptable from this case. */
-    @SuppressWarnings("unchecked")
     default T throwable(Context context, Throwable cause) {
       try {
-        if (context != null && cause != null) {
-          Contexceptablized.stage(context, cause);
-        }
-        Class<T> type = this.throwableType();
+        var args = new ConstructArgs(this, context, cause);
+        Class<T> type = this._throwableType();
         return Exceptable.class.isAssignableFrom(type) ?
-          type.getDeclaredConstructor(Signal.class, Context.class, Throwable.class)
-            .newInstance(this, context, cause) :
-          type.getDeclaredConstructor(String.class, Throwable.class)
-            .newInstance(this.message(context), cause);
+          type.getDeclaredConstructor(ConstructArgs.class).newInstance(args) :
+          type.getDeclaredConstructor(String.class).newInstance(args.message());
       } catch (Throwable t) {
-        // problem building the intended Exceptable. fall back on using a basic Exceptable.
-        return (T) new CheckedException(this, context, cause);
+        throw new RuntimeException("HERE: "+t);//throw Runtime.UncaughtException.throwable(t);
       }
     }
 
@@ -171,9 +187,25 @@ public interface Exceptable {
       return this.message(null);
     }
 
+    /** A default (empty) Context class that matches this Signal, if any available. */
+    default Context _defaultContext() {
+      var thisClass = this.getClass();
+      var signalName = this.name();
+      for (var nestedClass : thisClass.getDeclaredClasses()) {
+        if (Context.class.isAssignableFrom(nestedClass) && nestedClass.getSimpleName().toString().equals(signalName)) {
+          for (var constructor : nestedClass.getDeclaredConstructors()) {
+            try {
+              return (Context) constructor.newInstance(new Object[constructor.getParameterCount()]);
+            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {}
+          }
+        }
+      }
+      return null;
+    }
+
     /** The Throwable+Exceptable class this Signal must use. */
     @SuppressWarnings("unchecked")
-    default Class<T> throwableType() {
+    default Class<T> _throwableType() {
       for (var genericInterface : this.getClass().getGenericInterfaces()) {
         if (genericInterface instanceof ParameterizedType parameterizedInterface &&
           parameterizedInterface.getRawType() == Signal.class) {
@@ -194,7 +226,7 @@ public interface Exceptable {
 
       /** Provides a contextualized error message. */
       default String message() {
-        if (this.template() instanceof String template) {
+        if (this._template() instanceof String template) {
           if (template.contains("{")) {
             // iterate and stringify record components
             for (RecordComponent rc : this.getClass().getRecordComponents()) {
@@ -237,17 +269,17 @@ public interface Exceptable {
        * <li> primitives, via {@code String.valueOf(primitive)}
        * <li> objects, via {@code object.toString()}
        * <li> arrays of primitives or objects, via above strategies, wrapped in brackets and joined by commas
-       * <li> the {@code cause} of the related Exceptable, 
+       * <li> the {@code cause} of the related Exceptable,
        *  if it was instantiated via {@code Signal.throwable()} and a cause was given.
        * </ul>
        *
        * It is the implementation's responsibility to ensure that any context referenced in a message template
        *  has a meaningful string representation.
        */
-      default String template() {
-        return null;
-      }
+      default String _template() { return null; }
     }
+
+    String name();
   }
 
   // Throwable methods

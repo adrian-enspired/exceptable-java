@@ -65,21 +65,6 @@ public class TestSourceProcessor extends AbstractProcessor {
 
       @Override
       @ParameterizedTest
-      @MethodSource("{sources_construct}")
-      public void construct(Signal signal, Context context, Throwable cause) {
-        assertDoesNotThrow(() -> {
-          var actual = this.exceptable()
-            .getDeclaredConstructor(Signal.class, Context.class, Throwable.class)
-            .newInstance(signal, context, cause);
-          this.signal_assertions(signal, actual);
-          this.cause_assertions(cause, actual);
-          this.context_assertions(context, actual.context());
-          this.message_assertions(signal.message(context), actual.message(), signal);
-        });
-      }
-
-      @Override
-      @ParameterizedTest
       @MethodSource("{sources_SignalCode}")
       public void SignalCode(Signal signal, String expected) {
         var actual = signal.code();
@@ -117,8 +102,9 @@ public class TestSourceProcessor extends AbstractProcessor {
         if (actual instanceof Exceptable actualX) {
           this.signal_assertions(signal, actualX);
           this.cause_assertions(cause, actualX);
-          this.context_assertions(context, actualX.context());
-          this.message_assertions(signal.message(context), actualX.message(), signal);
+          var expectedContext = (context != null) ? context : signal._defaultContext();
+          this.context_assertions(expectedContext, actualX.context());
+          this.message_assertions(signal.message(expectedContext), actualX.message(), signal);
         }
       }
     }

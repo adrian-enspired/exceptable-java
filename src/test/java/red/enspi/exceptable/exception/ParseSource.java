@@ -21,27 +21,27 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.provider.Arguments;
 
 import red.enspi.exceptable.annotation.TestSource;
-import red.enspi.exceptable.signal.Runtime;
+import red.enspi.exceptable.signal.Parse;
 
-@TestSource(exceptableClass = "RuntimeException", packageName = "red.enspi.exceptable.exception")
-public class RuntimeSource {
+@TestSource(exceptableClass = "ParseException", packageName = "red.enspi.exceptable.exception")
+public class ParseSource {
 
   public static Stream<Arguments> construct_source() {
     return Stream.of(
-      Arguments.of(Runtime.UnknownError, null, null),
-      Arguments.of(Runtime.UnknownError, null, new java.lang.Exception("This is a test.")));
+      Arguments.of(Parse.UnknownError, null, null),
+      Arguments.of(Parse.UnknownError, null, new java.lang.Exception("This is a test.")));
   }
 
   public static Stream<Arguments> SignalCode_source() {
     return Stream.of(
-      Arguments.of(Runtime.UnknownError, "red.enspi.exceptable.signal.Runtime.UnknownError"));
+      Arguments.of(Parse.UnknownError, "red.enspi.exceptable.signal.Parse.UnknownError"));
   }
 
   public static Stream<Arguments> SignalMessage_source() {
     return Stream.of(
       Arguments.of(
-        Runtime.UnknownError,
+        Parse.UnknownError,
         null,
-        "red.enspi.exceptable.signal.Runtime.UnknownError"));
+        "red.enspi.exceptable.signal.Parse.UnknownError"));
   }
 }

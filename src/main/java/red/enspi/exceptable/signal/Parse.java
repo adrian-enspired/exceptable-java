@@ -17,17 +17,25 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.exception.UnknownHostException;
+import red.enspi.exceptable.exception.ParseException;
 
-/** Indicates that the IP address of a host could not be determined. */
-public enum UnknownHost implements Signal<UnknownHostException> {
+/** Signals that an error has been reached or encountered while parsing. */
+public enum Parse implements Signal<ParseException> {
   UncaughtException, UnknownError;
+
+  public interface Context extends Signal.Context { Integer offset(); }
+
+  public record UncaughtException(Integer offset) implements Context {
+    @Override
+    public String _template() { return "Uncaught exception: {cause}"; }
+  }
+  public record UnknownError(Integer offset) implements Context {}
 
   @Override
   public Context _defaultContext() {
     return switch(this) {
-      case UncaughtException -> Checked.UncaughtException._defaultContext();
-      case UnknownError -> Checked.UnknownError._defaultContext();
+      case UncaughtException -> new Parse.UncaughtException(0);
+      case UnknownError -> new Parse.UnknownError(0);
     };
   }
 }
