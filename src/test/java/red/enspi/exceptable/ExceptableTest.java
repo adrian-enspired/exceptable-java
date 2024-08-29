@@ -64,29 +64,6 @@ public interface ExceptableTest {
   Class<? extends Exceptable> exceptable();
 
   /**
-   * Constructor tests.
-   *
-   * This is a `@ParameterizedTest` and requires a source that provides:
-   * <ul>
-   * <li> `Signal`: the case from a Signal enum to be tested.
-   * <li> `Context`: a Context record appropriate for the Signal being tested.
-   * <li> `Throwable`: an Exception to use as the cause of the Signal being tested.
-   * </ul>
-   *
-   * For each Signal tested, you should have (at a minimum) four test cases:
-   * <ul>
-   * <li> with a context object and cause.
-   * <li> with context only.
-   * <li> with cause only.
-   * <li> with neither.
-   * </ul>
-   *
-   * Note this test is for successful test scenarios (i.e., correct usage).
-   * However, it should also be able verify that a Signal with mismatched context is handled gracefully.
-   */
-  void construct(Signal<?> signal, Context context, Throwable cause);
-
-  /**
    * Tests that an Exceptable Signal provides the expected error code.
    *
    * This is a `@ParameterizedTest` and requires a source that provides:

@@ -23,7 +23,6 @@ import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import red.enspi.exceptable.exception.RuntimeException;
 import red.enspi.exceptable.signal.Runtime;
 
 /**
@@ -119,8 +118,13 @@ public interface Exceptable {
         signal = Runtime.UnknownError;
       }
       if (context == null) {
-        context = signal._defaultContext(cause);
+        context = signal._defaultContext();
       }
+      Exceptable._stage(context, cause);
+    }
+
+    public String message() {
+      return this.signal().message(this.context());
     }
   }
 
@@ -130,16 +134,13 @@ public interface Exceptable {
     /** Factory: builds an Exceptable from this case. */
     default T throwable(Context context, Throwable cause) {
       try {
-        Exceptable._stage(context, cause);
+        var args = new ConstructArgs(this, context, cause);
         Class<T> type = this._throwableType();
         return Exceptable.class.isAssignableFrom(type) ?
-          type.getDeclaredConstructor(Signal.class, Context.class, Throwable.class)
-            .newInstance(this, context, cause) :
-          type.getDeclaredConstructor(String.class, Throwable.class)
-            .newInstance(this.message(context), cause);
+          type.getDeclaredConstructor(ConstructArgs.class).newInstance(args) :
+          type.getDeclaredConstructor(String.class).newInstance(args.message());
       } catch (Throwable t) {
-        // problem building the intended Exceptable. fall back on using a basic Exceptable.
-        throw Runtime.UncaughtException.throwable(t);
+        throw new RuntimeException("HERE: "+t);//throw Runtime.UncaughtException.throwable(t);
       }
     }
 
@@ -187,18 +188,14 @@ public interface Exceptable {
     }
 
     /** A default (empty) Context class that matches this Signal, if any available. */
-    default Context _defaultContext(Throwable cause) {
+    default Context _defaultContext() {
       var thisClass = this.getClass();
       var signalName = this.name();
       for (var nestedClass : thisClass.getDeclaredClasses()) {
         if (Context.class.isAssignableFrom(nestedClass) && nestedClass.getSimpleName().toString().equals(signalName)) {
           for (var constructor : nestedClass.getDeclaredConstructors()) {
             try {
-              if (constructor.newInstance(new Object[constructor.getParameterCount()]) instanceof Context defaultContext) {
-                constructor.setAccessible(true);
-                Exceptable._stage(defaultContext, cause);
-                return defaultContext;
-              }
+              return (Context) constructor.newInstance(new Object[constructor.getParameterCount()]);
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {}
           }
         }

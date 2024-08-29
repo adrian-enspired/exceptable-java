@@ -17,10 +17,10 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.exception.UnknownHostException;
+import red.enspi.exceptable.exception.CharConversionException;
 
-/** Indicates that the IP address of a host could not be determined. */
-public enum UnknownHost implements Signal<UnknownHostException> {
+/** Indicates a failure to convert between different character encodings. */
+public enum CharConversion implements Signal<CharConversionException> {
   UncaughtException, UnknownError;
 
   @Override

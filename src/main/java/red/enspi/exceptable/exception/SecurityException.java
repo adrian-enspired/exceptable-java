@@ -19,13 +19,13 @@ package red.enspi.exceptable.exception;
 import red.enspi.exceptable.Exceptable;
 import red.enspi.exceptable.Exceptable.Signal.Context;
 
-/** _Exceptable_ for Checked errors. */
-public class CheckedException extends java.lang.Exception implements Exceptable {
+/** _Exceptable_ for SecurityException errors. */
+public class SecurityException extends java.lang.SecurityException implements Exceptable {
 
   private final Signal<?> signal;
   private final Context context;
 
-  public CheckedException(ConstructArgs args) {
+  public SecurityException(ConstructArgs args) {
     super(args.message());
     this.signal = args.signal();
     this.context = args.context();

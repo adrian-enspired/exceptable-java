@@ -18,15 +18,16 @@ package red.enspi.exceptable.exception;
 
 import red.enspi.exceptable.Exceptable;
 import red.enspi.exceptable.Exceptable.Signal.Context;
+import red.enspi.exceptable.signal.Parse;
 
-/** _Exceptable_ for Checked errors. */
-public class CheckedException extends java.lang.Exception implements Exceptable {
+/** _Exceptable_ for ParseException errors. */
+public class ParseException extends java.text.ParseException implements Exceptable {
 
   private final Signal<?> signal;
   private final Context context;
 
-  public CheckedException(ConstructArgs args) {
-    super(args.message());
+  public ParseException(ConstructArgs args) {
+    super(args.message(), (args.context() instanceof Parse.Context parseContext) ? parseContext.offset() : 0);
     this.signal = args.signal();
     this.context = args.context();
     var cause = args.cause();

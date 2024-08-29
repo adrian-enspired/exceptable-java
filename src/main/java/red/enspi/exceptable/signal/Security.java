@@ -17,10 +17,10 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.exception.UnknownHostException;
+import red.enspi.exceptable.exception.SecurityException;
 
-/** Indicates that the IP address of a host could not be determined. */
-public enum UnknownHost implements Signal<UnknownHostException> {
+/** Indicates a security violation. */
+public enum Security implements Signal<SecurityException> {
   UncaughtException, UnknownError;
 
   @Override

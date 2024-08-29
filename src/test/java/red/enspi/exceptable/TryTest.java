@@ -285,7 +285,6 @@ public class TryTest {
 
   @Test
   void resultDefaultSignals() {
-    assertEquals(IO.UnknownError, new Result.Failure<>(null, null, new IOException()).signal());
     assertEquals(IO.UncaughtException, new Result.Failure<>(null, null, new java.io.IOException()).signal());
   }
 

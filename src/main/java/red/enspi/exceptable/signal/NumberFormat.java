@@ -17,10 +17,10 @@
 package red.enspi.exceptable.signal;
 
 import red.enspi.exceptable.Exceptable.Signal;
-import red.enspi.exceptable.exception.UnknownHostException;
+import red.enspi.exceptable.exception.NumberFormatException;
 
-/** Indicates that the IP address of a host could not be determined. */
-public enum UnknownHost implements Signal<UnknownHostException> {
+/** Indicates that an attempt to convert a string to a numeric type has failed. */
+public enum NumberFormat implements Signal<NumberFormatException> {
   UncaughtException, UnknownError;
 
   @Override
