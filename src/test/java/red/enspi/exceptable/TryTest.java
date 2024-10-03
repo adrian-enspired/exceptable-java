@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 
 import red.enspi.exceptable.signal.Checked;
 import red.enspi.exceptable.signal.IO;
-import red.enspi.exceptable.exception.IOException;
 import red.enspi.exceptable.exception.IllegalArgumentException;
 import red.enspi.exceptable.exception.RuntimeException;
 import red.enspi.exceptable.Try.Result;
@@ -281,6 +280,20 @@ public class TryTest {
     Result<String, Trier.Signal> actual = new Trier().getSignal();
     this.failureResult_assertions(actual);
     assertThrows(RuntimeException.class, () -> actual.assume());
+  }
+
+  @Test
+  void nullableSuccess() {
+    Result<String, Trier.Signal> actual = new Trier().getResult();
+    this.successResult_assertions(actual);
+    assertDoesNotThrow(() -> assertEquals("foo!", actual.nullable()));
+  }
+
+  @Test
+  void nullableFailure() {
+    Result<String, Trier.Signal> actual = new Trier().getSignal();
+    this.failureResult_assertions(actual);
+    assertDoesNotThrow(() -> assertEquals(null, actual.nullable()));
   }
 
   @Test

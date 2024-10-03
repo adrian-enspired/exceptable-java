@@ -234,6 +234,11 @@ public class Try {
       public V assume() {
         return this.value();
       }
+
+      @Override
+      public V nullable() {
+        return this.value;
+      }
     }
 
     /** A failure result. */
@@ -269,6 +274,11 @@ public class Try {
         return this.signal().message();
       }
 
+      @Override
+      public V nullable() {
+        return null;
+      }
+
       private Signal<?> signalFor(Throwable throwable) {
         return (throwable instanceof Exceptable x) ?
           x.signal() :
@@ -294,31 +304,31 @@ public class Try {
     }
 
     /** Factory: builds a failure Result. */
-    public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Context context, Throwable cause) {
+    public static <V, S extends Signal<?>> Result.Failure<V, S> failure(S signal, Context context, Throwable cause) {
       return new Failure<>(signal, context, cause);
     }
 
-    public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Context context) {
+    public static <V, S extends Signal<?>> Result.Failure<V, S> failure(S signal, Context context) {
       return new Failure<>(signal, context, null);
     }
 
-    public static <V, S extends Signal<?>> Result<V, S> failure(S signal) {
+    public static <V, S extends Signal<?>> Result.Failure<V, S> failure(S signal) {
       return new Failure<>(signal, null, null);
     }
 
-    public static <V, S extends Signal<?>> Result<V, S> failure(S signal, Throwable cause) {
+    public static <V, S extends Signal<?>> Result.Failure<V, S> failure(S signal, Throwable cause) {
       return new Failure<>(signal, null, cause);
     }
 
-    public static <V, S extends Signal<?>> Result<V, S> failure(Context context, Throwable cause) {
+    public static <V, S extends Signal<?>> Result.Failure<V, S> failure(Context context, Throwable cause) {
       return new Failure<>(null, context, cause);
     }
 
-    public static <V, S extends Signal<?>> Result<V, S> failure(Throwable cause) {
+    public static <V, S extends Signal<?>> Result.Failure<V, S> failure(Throwable cause) {
       return new Failure<>(null, null, cause);
     }
 
-    public static <T, V, S extends Signal<?>, E extends Signal<?>> Result<V, S> failure(S signal, Result<T, E> result) {
+    public static <T, V, S extends Signal<?>, E extends Signal<?>> Result.Failure<V, S> failure(S signal, Result<T, E> result) {
       return switch (result) {
         case Result.Failure<T, E> failure -> new Failure<>(signal, failure.context(), failure.cause());
         case Result.Success<T, E> success -> new Failure<>(signal, null, null);
@@ -326,12 +336,15 @@ public class Try {
     }
 
     /** Factory: builds a success Result from the given return value. */
-    public static <V, S extends Signal<?>> Result<V, S> success(V value) {
+    public static <V, S extends Signal<?>> Result.Success<V, S> success(V value) {
       return new Success<>(value);
     }
 
     /** Assumes the Result is successful and tries to return its value. */
     V assume() throws RuntimeException;
+
+    /** Returns the Result's value on success, and null on failure. */
+    V nullable();
   }
 
   public interface ResultSupplier<V, S extends Signal<?>> { Result<V, S> invoke(); }
