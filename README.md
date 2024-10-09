@@ -1,10 +1,18 @@
 _exceptable_ makes exceptions exceptional!
 
-## Exceptions
+Exceptables (and signals) are:
+
+- ✓ easy to create and pass details to
+- ✓ are readable by both humans and your application code
+- ✓ can provide a wealth of runtime information about the state of things that led to the problem
+- ✓ make it easy to add, adapt, and maintain error handling code as your application grows
+- ✓ usable as error values, allowing functional error handling patterns
+
+### Exceptions
 
 Exceptable's basic Exception types extend from java's built-in Exceptions (e.g., `red.enspi.exceptable.signal.RuntimeException` extends from `java.lang.RuntimeException`), so code that isn't aware of Exceptables can still catch classes of exceptions in a sensible way. You can build your own custom types "from scratch," but it's generally best to extend from one of these "base" Exceptables.
 
-## Signals
+### Signals
 
 What are "signals"?
 
@@ -13,6 +21,12 @@ _Exceptable_ uses enum values to define specific error cases. The advantage is t
 Signals can also define _context_ classes for any error case, which allows you to provide runtime information with more details about what went wrong - for example, classnames, inputs/arguments, and other stateful information that can help with handling the error.
 
 Each Signal is associated with a particular Exception type, and can construct an exception where needed.
+
+## installation and dependencies
+
+No external dependencies.
+
+Recommended installation method is to use maven. Check the latest package on github.
 
 ## Usage
 
@@ -160,13 +174,26 @@ try {
 ```
 As when collecting errors, this also works with Signals, and if an Exception/Signal is encoutered that you didn't specify, it is rethrown as an `UncaughtException`.
 
-#### `Try.assuming()`
+#### `Try.assume()`
 
-We can take the "ignore" concept a step further and just _assume_ that the method is going to succeed. If it's not, the Exception/Signal that caused the failure will be rethrown as an `UncaughtException`:
+We can take the "ignore" concept a step further and just _assume_ that the attempt to run a callback has succeeded. If it didn't, the Exception/Signal that caused the failure will be rethrown as an `UncaughtException`:
 ```java
 try {
-  System.out.println(Try.result.assuming());
+  System.out.println(Try.result(() -> new Some().fragileMethod(n)).assume());
 } catch (Exception e) {
   System.out.println("Well that was unexpected: " + e.cause().getMessage());
 }
 ```
+
+#### `Try.nullable()`
+
+This takes the attempt and simply returns `null` if it failed. Any error or exception are lost (so be sure you don't need to know about it). This is useful when you don't need to do anything to handle a potential error aside from not using the (absent) return value. It is particularly suited to use with pattern matching:
+```java
+if (Try.result(() -> new Some().fragileMethod(n)).nullable() instanceof String itscool) {
+  System.out.println(itscool);
+}
+```
+
+## contributing or getting help
+
+I'm on IRC at [libera#__adrian](https://web.libera.chat/#__adrian), or open an issue on github. Feedback is welcomed as well!
